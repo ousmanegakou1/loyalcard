@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/>
+<meta name="theme-color" content="#061206"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<title id="page-title">LoyalCard</title>
+<meta name="description" id="page-desc" content="Ta carte de fidélité"/>
+<!-- Open Graph pour WhatsApp preview -->
+<meta property="og:title"       id="og-title"   content="Ma carte LoyalCard"/>
+<meta property="og:description" id="og-desc"    content="Vois tes points et récompenses"/>
+<meta property="og:image"                        content="https://loyalcard.sn/og-card.png"/>
+<link rel="manifest"   href="/manifest.json"/>
+<link rel="icon"       href="/favicon.ico"/>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,700;0,900;1,700&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<script src="/loyalcard-supabase.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+:root{
+  --bg:#061206;
+  --s1:#0a1a0a;--s2:#0f240f;--s3:#152e15;
+  --b1:rgba(34,197,94,.08);--b2:rgba(34,197,94,.16);--b3:rgba(34,197,94,.28);
+  --tx:#ecf5ec;--tx2:#7aaa7a;--tx3:#3a5e3a;
+  --green:#16a34a;--green2:#22c55e;--green3:#4ade80;
+  --gold:#f5c842;--gold2:#fde68a;
+  --red:#ef4444;--wave:#00c4a3;
+  --accent:#e94560;
+  --r:14px;--r2:20px;--r3:28px;
+}
+html,body{min-height:100svh;background:var(--bg)}
+body{font-family:'DM Sans',sans-serif;color:var(--tx);overflow-x:hidden;-webkit-font-smoothing:antialiased}
+
+.bg{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden}
+.bg::before{content:'';position:absolute;top:-20vh;left:50%;transform:translateX(-50%);width:100vw;height:100vw;background:radial-gradient(circle,rgba(22,163,74,.12) 0%,transparent 65%)}
+.bg::after{content:'';position:absolute;bottom:-20vh;right:-20vw;width:60vw;height:60vw;background:radial-gradient(circle,rgba(0,196,163,.06) 0%,transparent 70%)}
+
+.app{position:relative;z-index:1;max-width:430px;margin:0 auto;min-height:100svh;display:flex;flex-direction:column;padding:0 0 max(env(safe-area-inset-bottom),20px)}
+
+/* ── LOADER ── */
+#loader{position:fixed;inset:0;background:var(--bg);z-index:999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;transition:opacity .5s ease}
+#loader.hide{opacity:0;pointer-events:none}
+.loader-logo{font-family:'Fraunces',serif;font-size:2rem;font-weight:900;color:var(--tx)}
+.loader-logo em{color:var(--green2);font-style:normal}
+.loader-bar{width:160px;height:2px;background:var(--s3);border-radius:2px;overflow:hidden}
+.loader-fill{height:100%;background:linear-gradient(90deg,var(--green),var(--green2));animation:loadfill 1.2s ease forwards}
+@keyframes loadfill{from{width:0}to{width:100%}}
+
+/* ── HEADER ── */
+.top-bar{display:flex;align-items:center;justify-content:space-between;padding:max(env(safe-area-inset-top),16px) 20px 0}
+.logo-sm{font-family:'Fraunces',serif;font-size:1rem;font-weight:900;color:var(--tx)}
+.logo-sm em{color:var(--green2);font-style:normal}
+.share-btn{width:36px;height:36px;border-radius:50%;background:var(--s2);border:1px solid var(--b2);display:flex;align-items:center;justify-content:center;font-size:.9rem;cursor:pointer;transition:all .15s}
+.share-btn:hover{background:var(--s3)}
+
+/* ── LOYALTY CARD VISUAL ── */
+.card-wrap{padding:20px 20px 0;animation:slideUp .4s ease}
+@keyframes slideUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:none}}
+
+.lc{
+  border-radius:22px;padding:20px 22px;position:relative;overflow:hidden;
+  aspect-ratio:1.62;display:flex;flex-direction:column;justify-content:space-between;
+  box-shadow:0 12px 48px rgba(0,0,0,.6);cursor:pointer;
+  transition:transform .2s,box-shadow .2s;
+}
+.lc:hover{transform:translateY(-2px);box-shadow:0 20px 60px rgba(0,0,0,.7)}
+.lc-orb{position:absolute;top:-40px;right:-40px;width:160px;height:160px;border-radius:50%;opacity:.1;filter:blur(40px)}
+
+/* card top */
+.lc-top{position:relative;z-index:1;display:flex;align-items:center;justify-content:space-between;gap:8px}
+.lc-brand{display:flex;align-items:center;gap:9px;min-width:0}
+.lc-logo{width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.18);display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0}
+.lc-merchant-name{font-family:'Fraunces',serif;font-size:.82rem;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lc-tagline{font-size:.52rem;color:rgba(255,255,255,.38);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-style:italic}
+.lc-tier{flex-shrink:0;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);border-radius:20px;padding:3px 9px;font-size:.58rem;font-weight:700;color:rgba(255,255,255,.8);font-family:'DM Mono',monospace;letter-spacing:.3px}
+
+/* card mid */
+.lc-mid{position:relative;z-index:1;flex:1;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 0}
+.lc-pts-block{}
+.lc-pts{font-family:'Fraunces',serif;font-size:2.4rem;font-weight:900;color:#fff;line-height:1}
+.lc-pts-lbl{font-size:.54rem;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:.1em;margin-bottom:4px}
+.lc-client{font-size:.72rem;font-weight:600;color:rgba(255,255,255,.8);margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lc-status{font-size:.58rem;margin-top:3px}
+.lc-status.ready{color:var(--gold2);font-weight:600}
+.lc-status.pending{color:rgba(255,255,255,.35)}
+.lc-qr{background:#fff;border-radius:10px;padding:5px;box-shadow:0 2px 12px rgba(0,0,0,.4);flex-shrink:0}
+
+/* card bottom */
+.lc-bottom{position:relative;z-index:1}
+.lc-dots{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:5px}
+.lc-dot{width:11px;height:11px;border-radius:50%;border:1.5px solid rgba(255,255,255,.2);background:transparent;flex-shrink:0;transition:all .3s}
+.lc-dot.f{background:rgba(255,255,255,.65);border-color:transparent}
+.lc-dot.r{background:var(--gold);border-color:var(--gold2);box-shadow:0 0 5px rgba(245,200,66,.5)}
+.lc-prog{height:2px;background:rgba(255,255,255,.1);border-radius:10px;overflow:hidden;margin-bottom:4px}
+.lc-prog-fill{height:100%;border-radius:10px;transition:width .6s ease}
+.lc-code{font-family:'DM Mono',monospace;font-size:.52rem;color:rgba(255,255,255,.25);letter-spacing:.08em}
+
+/* ── STATS STRIP ── */
+.stats-strip{
+  margin:14px 20px 0;
+  display:flex;gap:1px;background:var(--b1);border-radius:var(--r2);overflow:hidden;border:1px solid var(--b1);
+}
+.stat{flex:1;background:var(--s2);padding:13px 10px;text-align:center}
+.stat-val{font-family:'Fraunces',serif;font-size:1.4rem;font-weight:900;color:var(--green2);line-height:1}
+.stat-lbl{font-family:'DM Mono',monospace;font-size:.58rem;color:var(--tx3);text-transform:uppercase;letter-spacing:.5px;margin-top:3px}
+
+/* ── SECTIONS ── */
+.section{padding:20px 20px 0}
+.sec-title{font-family:'Fraunces',serif;font-size:1rem;font-weight:700;color:var(--tx);margin-bottom:12px}
+
+/* ── REWARD READY BANNER ── */
+.reward-banner{
+  background:rgba(245,200,66,.06);border:1.5px solid rgba(245,200,66,.25);
+  border-radius:var(--r2);padding:16px;display:flex;align-items:center;gap:14px;
+  animation:pulse-border 2s ease-in-out infinite;
+}
+@keyframes pulse-border{0%,100%{border-color:rgba(245,200,66,.25)}50%{border-color:rgba(245,200,66,.5)}}
+.reward-icon{font-size:1.8rem;flex-shrink:0}
+.reward-info{flex:1}
+.reward-title{font-size:.9rem;font-weight:700;color:var(--gold2);margin-bottom:3px}
+.reward-desc{font-size:.75rem;color:rgba(245,200,66,.55)}
+.reward-use-btn{
+  background:var(--gold);color:#0a1a0a;border:none;border-radius:var(--r);
+  padding:10px 16px;font-family:'DM Sans',sans-serif;font-size:.8rem;font-weight:700;
+  cursor:pointer;flex-shrink:0;transition:all .15s;
+}
+.reward-use-btn:hover{background:var(--gold2)}
+
+/* ── REWARDS LIST ── */
+.reward-item{
+  background:var(--s2);border:1px solid var(--b1);border-radius:var(--r2);
+  padding:14px;display:flex;align-items:center;gap:12px;margin-bottom:8px;
+}
+.reward-item.unlocked{border-color:var(--b3);background:rgba(34,197,94,.04)}
+.ri-icon{width:42px;height:42px;border-radius:12px;background:var(--s3);display:flex;align-items:center;justify-content:center;font-size:1.2rem;flex-shrink:0}
+.ri-info{flex:1;min-width:0}
+.ri-name{font-size:.85rem;font-weight:700;margin-bottom:2px}
+.ri-desc{font-size:.7rem;color:var(--tx2);margin-bottom:5px}
+.ri-cost{font-size:.68rem;color:var(--tx3);font-family:'DM Mono',monospace}
+.ri-status{flex-shrink:0;text-align:center}
+.ri-unlocked{font-size:.72rem;color:var(--green3);font-weight:700}
+.ri-locked{font-size:.65rem;color:var(--tx3);line-height:1.4}
+.ri-prog{height:3px;background:var(--s3);border-radius:10px;overflow:hidden;margin-top:4px}
+.ri-prog-fill{height:100%;background:var(--green);border-radius:10px}
+
+/* ── HISTORY ── */
+.hist-item{display:flex;align-items:center;gap:11px;padding:11px 0;border-bottom:1px solid var(--b1)}
+.hist-item:last-child{border-bottom:none}
+.hist-ico{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0}
+.hist-ico.earn{background:rgba(34,197,94,.1)}
+.hist-ico.reward{background:rgba(245,200,66,.1)}
+.hist-info{flex:1;min-width:0}
+.hist-note{font-size:.82rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hist-date{font-size:.66rem;color:var(--tx3);font-family:'DM Mono',monospace;margin-top:2px}
+.hist-pts{font-family:'Fraunces',serif;font-weight:700;font-size:.88rem;flex-shrink:0}
+.pts-p{color:var(--green3)}.pts-m{color:var(--red)}
+
+/* ── QR BIG SECTION ── */
+.qr-section{
+  margin:0 20px;background:var(--s2);border:1px solid var(--b2);
+  border-radius:var(--r2);padding:20px;text-align:center;
+}
+.qr-section-title{font-size:.7rem;color:var(--tx3);font-family:'DM Mono',monospace;text-transform:uppercase;letter-spacing:.8px;margin-bottom:12px}
+.qr-big-wrap{background:#fff;border-radius:12px;padding:10px;display:inline-block;box-shadow:0 4px 20px rgba(0,0,0,.4);margin-bottom:10px}
+.qr-code-txt{font-family:'DM Mono',monospace;font-size:.8rem;color:var(--tx2);letter-spacing:.08em;margin-bottom:6px}
+.qr-hint{font-size:.72rem;color:var(--tx3);line-height:1.6}
+
+/* ── CTA BUTTONS ── */
+.cta-row{display:flex;gap:10px;padding:16px 20px 0}
+.cta{flex:1;padding:15px;border-radius:var(--r);border:none;font-family:'DM Sans',sans-serif;font-size:.9rem;font-weight:700;cursor:pointer;transition:all .15s;display:flex;align-items:center;justify-content:center;gap:8px}
+.cta:active{transform:scale(.97)}
+.cta-primary{background:var(--green);color:#fff;box-shadow:0 4px 16px rgba(22,163,74,.3)}
+.cta-primary:hover{background:#15803d}
+.cta-ghost{background:var(--s2);color:var(--tx2);border:1px solid var(--b2)}
+.cta-ghost:hover{background:var(--s3);color:var(--tx)}
+
+/* ── INSTALL PROMPT ── */
+.install-bar{
+  margin:14px 20px 0;background:rgba(0,196,163,.06);border:1px solid rgba(0,196,163,.2);
+  border-radius:var(--r2);padding:12px 16px;display:flex;align-items:center;gap:12px;display:none;
+}
+.install-bar.show{display:flex}
+.install-bar-txt{flex:1;font-size:.75rem;color:var(--wave);line-height:1.5}
+.install-btn{background:var(--wave);color:#0a1a0a;border:none;border-radius:var(--r);padding:8px 14px;font-family:'DM Sans',sans-serif;font-size:.75rem;font-weight:700;cursor:pointer;flex-shrink:0}
+
+/* ── NOT FOUND ── */
+.not-found{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:40px 24px}
+.nf-icon{font-size:3rem;margin-bottom:16px;opacity:.3}
+.nf-title{font-family:'Fraunces',serif;font-size:1.3rem;font-weight:700;margin-bottom:8px}
+.nf-sub{font-size:.82rem;color:var(--tx2);line-height:1.6;margin-bottom:24px}
+.nf-btn{background:var(--green);color:#fff;border:none;border-radius:var(--r);padding:14px 24px;font-family:'DM Sans',sans-serif;font-size:.9rem;font-weight:700;cursor:pointer}
+
+/* ── TOAST ── */
+.toasts{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);z-index:9999;pointer-events:none;display:flex;flex-direction:column;gap:7px;align-items:center}
+.toast{background:var(--s3);border:1px solid var(--b2);border-radius:var(--r);padding:10px 18px;font-size:.8rem;font-weight:500;animation:tIn .3s ease;white-space:nowrap;display:flex;align-items:center;gap:7px;box-shadow:0 8px 24px rgba(0,0,0,.5)}
+.toast.ok{border-left:3px solid var(--green2);color:var(--green3)}
+.toast.info{border-left:3px solid var(--gold);color:var(--gold2)}
+@keyframes tIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+
+@supports(padding-bottom:env(safe-area-inset-bottom)){
+  .app{padding-bottom:calc(env(safe-area-inset-bottom) + 20px)}
+}
+</style>
+</head>
+<body>
+
+<div class="bg"></div>
+
+<!-- LOADER -->
+<div id="loader">
+  <div class="loader-logo">Loyal<em>Card</em></div>
+  <div class="loader-bar"><div class="loader-fill"></div></div>
+</div>
+
+<div class="app" id="app"></div>
+<div class="toasts" id="toasts"></div>
+
+<script>
+// ══════════════════════════════════════════
+// CONFIG SUPABASE
+// ══════════════════════════════════════════
+const SUPA_URL  = 'https://TON_PROJECT.supabase.co';
+const SUPA_ANON = 'TON_ANON_KEY';
+
+// ══════════════════════════════════════════
+// HELPERS
+// ══════════════════════════════════════════
+const esc = s => String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+
+function fmtDT(iso){
+  if(!iso) return '—';
+  const d=new Date(iso), now=new Date();
+  const diff=Math.floor((now-d)/86400000);
+  if(diff===0){
+    const dm=Math.floor((now-d)/60000);
+    if(dm<2)  return 'À l\'instant';
+    if(dm<60) return 'Il y a '+dm+' min';
+    return 'Aujourd\'hui '+d.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
+  }
+  if(diff===1) return 'Hier';
+  if(diff<7)   return 'Il y a '+diff+' jours';
+  return d.toLocaleDateString('fr-FR',{day:'2-digit',month:'short'});
+}
+
+function getTier(pts){
+  if(pts>=500) return{n:'Platinum',icon:'💎'};
+  if(pts>=200) return{n:'Gold',    icon:'🥇'};
+  if(pts>=50)  return{n:'Silver',  icon:'🥈'};
+  return       {n:'Bronze',        icon:'🥉'};
+}
+
+function getCode(){
+  // Cherche le code dans : /c/LC-XXXXXX ou ?code=LC-XXXXXX ou ?u=LC-XXXXXX
+  const path   = window.location.pathname.split('/').filter(Boolean);
+  const params = new URLSearchParams(window.location.search);
+  return path[path.length-1] || params.get('code') || params.get('u') || 'LC-A1B2C3';
+}
+
+// QR SVG inline (rapide, pas de lib)
+function qrSvg(text, size=160){
+  const N=21;
+  const seed=text.split('').reduce((a,c)=>a+c.charCodeAt(0),0);
+  const rng=i=>{let x=(seed*1664525+i*1013904223+i*i*6364136)&0x7fffffff;return x/0x7fffffff;};
+  const cells=[];
+  const finder=(ox,oy)=>{for(let r=0;r<7;r++)for(let c=0;c<7;c++){cells.push({r:oy+r,c:ox+c,dark:(r===0||r===6||c===0||c===6)||(r>=2&&r<=4&&c>=2&&c<=4)});}};
+  finder(0,0);finder(N-7,0);finder(0,N-7);
+  const fs=new Set(cells.map(x=>`${x.r},${x.c}`));
+  for(let r=0;r<N;r++)for(let c=0;c<N;c++){if(!fs.has(`${r},${c}`)){cells.push({r,c,dark:rng(r*N+c+1)<0.5});}}
+  const cs=size/N;
+  const rects=cells.filter(x=>x.dark).map(x=>`<rect x="${(x.c*cs).toFixed(1)}" y="${(x.r*cs).toFixed(1)}" width="${(cs+.3).toFixed(1)}" height="${(cs+.3).toFixed(1)}"/>`).join('');
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}"><rect width="${size}" height="${size}" fill="white" rx="5"/><g fill="#061206">${rects}</g></svg>`;
+}
+
+function makeQRLib(code, size=180){
+  const wrap = document.getElementById('qr-lib-target');
+  if(!wrap) return;
+  try{
+    new QRCode(wrap,{text:code,width:size,height:size,colorDark:'#061206',colorLight:'#ffffff',correctLevel:QRCode.CorrectLevel.M});
+  }catch(e){ wrap.innerHTML=qrSvg(code,size); }
+}
+
+function toast(msg, type='ok'){
+  const w=document.getElementById('toasts');
+  const el=document.createElement('div');
+  el.className='toast '+type;
+  el.innerHTML=(type==='ok'?'✓ ':'💡 ')+msg;
+  w.appendChild(el);
+  setTimeout(()=>el.remove(),3200);
+}
+
+// ══════════════════════════════════════════
+// FETCH DATA
+// ══════════════════════════════════════════
+async function fetchCard(code){
+  // Appel Edge Function get-points
+  try{
+    const res = await fetch(`${SUPA_URL}/functions/v1/get-points?code=${encodeURIComponent(code)}`,{
+      headers:{'Authorization':`Bearer ${SUPA_ANON}`}
+    });
+    if(!res.ok) return null;
+    return await res.json();
+  } catch(e){
+    // Mode démo si pas de Supabase
+    return null;
+  }
+}
+
+async function fetchHistory(cardId){
+  try{
+    const res = await fetch(
+      `${SUPA_URL}/rest/v1/transactions?card_id=eq.${cardId}&order=created_at.desc&limit=10`,
+      { headers:{'apikey':SUPA_ANON,'Authorization':`Bearer ${SUPA_ANON}`} }
+    );
+    if(!res.ok) return [];
+    return await res.json();
+  }catch(e){ return []; }
+}
+
+async function fetchRewards(merchantId){
+  try{
+    const res = await fetch(
+      `${SUPA_URL}/rest/v1/rewards?merchant_id=eq.${merchantId}&active=eq.true`,
+      { headers:{'apikey':SUPA_ANON,'Authorization':`Bearer ${SUPA_ANON}`} }
+    );
+    if(!res.ok) return [];
+    return await res.json();
+  }catch(e){ return []; }
+}
+
+// ══════════════════════════════════════════
+// DEMO DATA (si Supabase pas branché)
+// ══════════════════════════════════════════
+function getDemoData(code){
+  const demos = {
+    'LC-A1B2C3': {
+      code:'LC-A1B2C3', client_name:'Amina Diallo', client_phone:'+221771234567',
+      pts:7, lifetime_pts:47, tier:'bronze', progress_pct:70, reward_ready:false, remaining_pts:3,
+      merchant:{ name:'Café Atlas', emoji:'☕', threshold:10, reward_desc:'Café gratuit',
+        brand:{bg1:'#1a1a2e',bg2:'#0f3460',accent:'#e94560',text:'#ffffff',pattern:'dots',tagline:"Le goût de l'authenticité"} }
+    },
+    'LC-G7H8I9': {
+      code:'LC-G7H8I9', client_name:'Fatou Sow', client_phone:'+221703456789',
+      pts:42, lifetime_pts:92, tier:'silver', progress_pct:84, reward_ready:false, remaining_pts:8,
+      merchant:{ name:'Épicerie Ndiaye', emoji:'🛒', threshold:50, reward_desc:'5 000 FCFA offerts',
+        brand:{bg1:'#0f2027',bg2:'#2c5f2e',accent:'#f5c842',text:'#ffffff',pattern:'grid',tagline:'Frais chaque jour'} }
+    },
+  };
+  return demos[code] || null;
+}
+
+const DEMO_HISTORY = [
+  {type:'earn',  pts:2,  note:'2 cafés',       created_at: new Date(Date.now()-10*86400000).toISOString()},
+  {type:'earn',  pts:5,  note:'Petit-déjeuner', created_at: new Date(Date.now()-20*86400000).toISOString()},
+  {type:'reward',pts:-10,note:'Café gratuit',   created_at: new Date(Date.now()-15*86400000).toISOString()},
+  {type:'earn',  pts:3,  note:'Déjeuner',       created_at: new Date(Date.now()-5*86400000).toISOString()},
+  {type:'earn',  pts:7,  note:'Brunch',         created_at: new Date(Date.now()-2*86400000).toISOString()},
+];
+const DEMO_REWARDS = [
+  {id:'r1',name:'Café gratuit',   description:'Un café de ton choix',        emoji:'☕',pts_cost:10,type:'free_item'},
+  {id:'r2',name:'Viennoiserie',   description:'Croissant ou pain au choc.',  emoji:'🥐',pts_cost:6, type:'free_item'},
+  {id:'r3',name:'-20% addition',  description:'Sur ta prochaine visite',     emoji:'🏷️',pts_cost:15,type:'discount'},
+];
+
+// ══════════════════════════════════════════
+// RENDER
+// ══════════════════════════════════════════
+function renderCard(data, history, rewards){
+  const b       = data.merchant?.brand || {bg1:'#1a1a2e',bg2:'#0f3460',accent:'#e94560',text:'#ffffff'};
+  const tier    = getTier(data.lifetime_pts||0);
+  const pct     = data.progress_pct || Math.min(100,Math.round(((data.pts||0)/(data.merchant?.threshold||10))*100));
+  const rem     = data.remaining_pts ?? Math.max(0,(data.merchant?.threshold||10)-(data.pts||0));
+  const hasRwd  = data.reward_ready || (data.pts||0) >= (data.merchant?.threshold||10);
+  const maxDots = Math.min(data.merchant?.threshold||10, 10);
+  const filled  = Math.min(data.pts||0, maxDots);
+  const pid     = 'p'+Math.random().toString(36).slice(2,7);
+
+  const dots = Array.from({length:maxDots}).map((_,i)=>{
+    const f=i<filled, r2=hasRwd&&i===maxDots-1;
+    return `<div class="lc-dot${f?' f':''}${r2?' r':''}"></div>`;
+  }).join('');
+
+  // Pattern SVG
+  const patDefs = {
+    dots:`<pattern id="${pid}" width="20" height="20" patternUnits="userSpaceOnUse"><circle cx="10" cy="10" r="1.5" fill="${b.accent}" opacity=".07"/></pattern>`,
+    grid:`<pattern id="${pid}" width="24" height="24" patternUnits="userSpaceOnUse"><path d="M24 0H0M0 0V24" stroke="${b.accent}" stroke-width=".5" opacity=".07" fill="none"/></pattern>`,
+    circles:`<pattern id="${pid}" width="30" height="30" patternUnits="userSpaceOnUse"><circle cx="15" cy="15" r="10" fill="none" stroke="${b.accent}" stroke-width=".5" opacity=".07"/></pattern>`,
+    diagonal:`<pattern id="${pid}" width="16" height="16" patternUnits="userSpaceOnUse"><path d="M-4 4l8-8M0 16L16 0M12 20l8-8" stroke="${b.accent}" stroke-width="1" opacity=".07" fill="none"/></pattern>`,
+    none:'',
+  };
+  const patDef = patDefs[b.pattern||'dots'];
+  const patSvg = patDef ? `<svg style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none" xmlns="http://www.w3.org/2000/svg"><defs>${patDef}</defs><rect width="100%" height="100%" fill="url(#${pid})"/></svg>` : '';
+
+  // History HTML
+  const histHtml = (history||[]).length > 0
+    ? (history||[]).map(t=>`
+        <div class="hist-item">
+          <div class="hist-ico ${t.type}">${t.type==='earn'?'⭐':'🎁'}</div>
+          <div class="hist-info">
+            <div class="hist-note">${esc(t.note||'Transaction')}</div>
+            <div class="hist-date">${fmtDT(t.created_at)}</div>
+          </div>
+          <div class="hist-pts ${t.pts>0?'pts-p':'pts-m'}">${t.pts>0?'+':''}${t.pts}</div>
+        </div>`).join('')
+    : `<div style="text-align:center;padding:24px;color:var(--tx3);font-size:.78rem">Aucune transaction pour l'instant</div>`;
+
+  // Rewards HTML
+  const rwdHtml = (rewards||[]).map(r=>{
+    const can = (data.pts||0) >= r.pts_cost;
+    const rPct = Math.min(100, Math.round(((data.pts||0)/r.pts_cost)*100));
+    return `<div class="reward-item${can?' unlocked':''}">
+      <div class="ri-icon">${r.emoji||'🎁'}</div>
+      <div class="ri-info">
+        <div class="ri-name">${esc(r.name)}</div>
+        <div class="ri-desc">${esc(r.description||'')}</div>
+        <div class="ri-cost">⭐ ${r.pts_cost} pts requis</div>
+        ${!can?`<div class="ri-prog"><div class="ri-prog-fill" style="width:${rPct}%"></div></div>`:''}
+      </div>
+      <div class="ri-status">
+        ${can
+          ? `<div class="ri-unlocked">✓ Dispo</div>`
+          : `<div class="ri-locked">${r.pts_cost-(data.pts||0)}<br>pts</div>`}
+      </div>
+    </div>`;
+  }).join('');
+
+  // Meta tags
+  document.getElementById('page-title').textContent = `${data.client_name} — ${data.merchant?.name||'LoyalCard'}`;
+  document.getElementById('og-title').setAttribute('content', `${data.client_name} — ${data.merchant?.name}`);
+  document.getElementById('og-desc').setAttribute('content', `${data.pts} points · ${hasRwd?'Récompense disponible !':'Encore '+rem+' pts pour '+data.merchant?.reward_desc}`);
+
+  document.getElementById('app').innerHTML = `
+
+    <div class="top-bar">
+      <div class="logo-sm">Loyal<em>Card</em></div>
+      <div class="share-btn" onclick="shareCard('${data.code}','${esc(data.client_name)}')">📤</div>
+    </div>
+
+    <!-- CARTE VISUELLE -->
+    <div class="card-wrap">
+      <div class="lc" style="background:linear-gradient(135deg,${b.bg1},${b.bg2})">
+        <div class="lc-orb" style="background:${b.accent}"></div>
+        ${patSvg}
+
+        <div class="lc-top">
+          <div class="lc-brand">
+            <div class="lc-logo">${esc(data.merchant?.emoji||'🏪')}</div>
+            <div style="min-width:0">
+              <div class="lc-merchant-name">${esc(data.merchant?.name||'')}</div>
+              ${b.tagline?`<div class="lc-tagline">${esc(b.tagline)}</div>`:''}
+            </div>
+          </div>
+          <div class="lc-tier">${tier.icon} ${tier.n}</div>
+        </div>
+
+        <div class="lc-mid">
+          <div class="lc-pts-block">
+            <div class="lc-pts-lbl">points fidélité</div>
+            <div class="lc-pts">${data.pts||0}</div>
+            <div class="lc-client">${esc(data.client_name)}</div>
+            <div class="lc-status ${hasRwd?'ready':'pending'}">
+              ${hasRwd ? '🎁 Récompense disponible !' : `encore ${rem} pts → ${esc(data.merchant?.reward_desc||'')}`}
+            </div>
+          </div>
+          <div class="lc-qr" onclick="scrollToQR()">
+            ${qrSvg(data.code, 64)}
+          </div>
+        </div>
+
+        <div class="lc-bottom">
+          <div class="lc-dots">${dots}</div>
+          <div class="lc-prog"><div class="lc-prog-fill" style="width:${pct}%;background:${b.accent}"></div></div>
+          <div class="lc-code">${data.code}</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- STATS -->
+    <div class="stats-strip">
+      <div class="stat">
+        <div class="stat-val">${data.pts||0}</div>
+        <div class="stat-lbl">Points</div>
+      </div>
+      <div class="stat">
+        <div class="stat-val">${data.lifetime_pts||0}</div>
+        <div class="stat-lbl">Cumulés</div>
+      </div>
+      <div class="stat">
+        <div class="stat-val">${tier.icon}</div>
+        <div class="stat-lbl">${tier.n}</div>
+      </div>
+      <div class="stat">
+        <div class="stat-val">${rem}</div>
+        <div class="stat-lbl">Restants</div>
+      </div>
+    </div>
+
+    <!-- RÉCOMPENSE DISPO -->
+    ${hasRwd ? `
+    <div class="section">
+      <div class="reward-banner">
+        <div class="reward-icon">🎉</div>
+        <div class="reward-info">
+          <div class="reward-title">Récompense disponible !</div>
+          <div class="reward-desc">Montre cette page au commerçant pour obtenir : <strong>${esc(data.merchant?.reward_desc||'')}</strong></div>
+        </div>
+      </div>
+    </div>` : ''}
+
+    <!-- QR CODE GRAND -->
+    <div class="section" id="qr-section">
+      <div class="sec-title">Mon QR Code</div>
+      <div class="qr-section">
+        <div class="qr-section-title">Présente ce code à la caisse</div>
+        <div class="qr-big-wrap">
+          <div id="qr-lib-target"></div>
+        </div>
+        <div class="qr-code-txt">${data.code}</div>
+        <div class="qr-hint">Le commerçant scanne ce QR pour créditer tes points</div>
+      </div>
+    </div>
+
+    <!-- INVITE INSTALLER PWA -->
+    <div class="install-bar" id="install-bar">
+      <div class="install-bar-txt">📲 Ajoute LoyalCard sur ton écran d'accueil pour un accès rapide</div>
+      <button class="install-btn" id="install-btn-action">Ajouter</button>
+    </div>
+
+    <!-- RÉCOMPENSES -->
+    ${rwdHtml ? `
+    <div class="section">
+      <div class="sec-title">Récompenses disponibles</div>
+      ${rwdHtml}
+    </div>` : ''}
+
+    <!-- HISTORIQUE -->
+    <div class="section">
+      <div class="sec-title">Mes transactions</div>
+      ${histHtml}
+    </div>
+
+    <!-- ACTIONS -->
+    <div class="cta-row">
+      <button class="cta cta-primary" onclick="shareCard('${data.code}','${esc(data.client_name)}')">
+        📤 Partager ma carte
+      </button>
+      <button class="cta cta-ghost" onclick="scrollToQR()">
+        📷 Mon QR
+      </button>
+    </div>
+
+    <!-- FOOTER -->
+    <div style="text-align:center;padding:20px;font-size:.68rem;color:var(--tx3);font-family:'DM Mono',monospace">
+      LoyalCard · <a href="https://loyalcard.sn" style="color:var(--tx3);text-decoration:none">loyalcard.sn</a>
+    </div>
+  `;
+
+  // Générer le QR via lib pour la section grande
+  setTimeout(()=>makeQRLib(data.code, 180), 100);
+}
+
+function renderNotFound(code){
+  document.getElementById('app').innerHTML = `
+    <div class="top-bar"><div class="logo-sm">Loyal<em>Card</em></div></div>
+    <div class="not-found">
+      <div class="nf-icon">🔍</div>
+      <div class="nf-title">Carte introuvable</div>
+      <div class="nf-sub">Le code <strong style="color:var(--tx2);font-family:'DM Mono',monospace">${esc(code)}</strong><br>ne correspond à aucune carte.<br>Demande une nouvelle carte à ton commerçant.</div>
+      <button class="nf-btn" onclick="window.location.href='https://loyalcard.sn'">Découvrir LoyalCard</button>
+    </div>`;
+}
+
+// ══════════════════════════════════════════
+// ACTIONS
+// ══════════════════════════════════════════
+function scrollToQR(){
+  document.getElementById('qr-section')?.scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+function shareCard(code, name){
+  const url  = window.location.href;
+  const text = `Ma carte fidélité LoyalCard : ${url}`;
+  if(navigator.share){
+    navigator.share({title:'Ma carte LoyalCard — '+name, text, url}).catch(()=>{});
+  } else {
+    navigator.clipboard?.writeText(url);
+    toast('Lien copié !', 'ok');
+  }
+}
+
+// ══════════════════════════════════════════
+// PWA INSTALL
+// ══════════════════════════════════════════
+let deferredInstall = null;
+window.addEventListener('beforeinstallprompt', e=>{
+  e.preventDefault();
+  deferredInstall = e;
+  const bar = document.getElementById('install-bar');
+  if(bar) bar.classList.add('show');
+  const btn = document.getElementById('install-btn-action');
+  if(btn) btn.onclick = ()=>{
+    deferredInstall.prompt();
+    deferredInstall.userChoice.then(()=>{ bar.classList.remove('show'); });
+  };
+});
+
+// ══════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════
+async function init(){
+  const code = getCode();
+
+  // Essayer Supabase d'abord
+  let data = await fetchCard(code);
+
+  // Fallback démo si pas de Supabase
+  if(!data || data.error){
+    data = getDemoData(code);
+  }
+
+  if(!data){
+    document.getElementById('loader').classList.add('hide');
+    renderNotFound(code);
+    return;
+  }
+
+  // Charger historique et récompenses en parallèle
+  const [history, rewards] = await Promise.all([
+    data.id ? fetchHistory(data.id) : Promise.resolve(DEMO_HISTORY),
+    data.merchant ? fetchRewards(data.merchant.id||'demo') : Promise.resolve(DEMO_REWARDS),
+  ]);
+
+  renderCard(
+    data,
+    (history && history.length) ? history : DEMO_HISTORY,
+    (rewards && rewards.length) ? rewards : DEMO_REWARDS
+  );
+
+  // Cacher le loader
+  setTimeout(()=>document.getElementById('loader').classList.add('hide'), 400);
+}
+
+init();
+</script>
+</body>
+</html>

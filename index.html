@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<meta name="theme-color" content="#061206"/>
+<title>LoyalCard — Fidélité pour les commerçants sénégalais</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@700;900&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{--green:#16a34a;--green2:#22c55e;--gold:#f5c842;--bg:#061206;--tx:#ecf5ec;--tx2:#7aaa7a;--tx3:#3a5e3a}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--tx);min-height:100svh;-webkit-font-smoothing:antialiased}
+.bg{position:fixed;inset:0;z-index:0;pointer-events:none}
+.bg::before{content:'';position:absolute;top:-20vh;left:50%;transform:translateX(-50%);width:100vw;height:100vw;background:radial-gradient(circle,rgba(22,163,74,.12) 0%,transparent 60%)}
+.wrap{position:relative;z-index:1;max-width:480px;margin:0 auto;padding:60px 24px;text-align:center;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100svh;gap:20px}
+.logo{font-family:'Fraunces',serif;font-size:2.8rem;font-weight:900;letter-spacing:-.02em}
+.logo em{color:var(--green2);font-style:normal}
+.tagline{font-size:1.1rem;color:var(--tx2);line-height:1.6;max-width:320px}
+.divider{width:40px;height:2px;background:var(--green);border-radius:2px}
+.features{display:flex;flex-direction:column;gap:10px;width:100%;margin:8px 0}
+.feat{background:rgba(34,197,94,.06);border:1px solid rgba(34,197,94,.1);border-radius:14px;padding:14px 18px;display:flex;align-items:center;gap:12px;text-align:left}
+.feat-icon{font-size:1.4rem;flex-shrink:0}
+.feat-txt{font-size:.85rem;color:var(--tx2);line-height:1.5}
+.feat-txt strong{color:var(--tx);display:block;margin-bottom:2px}
+.cta{display:block;width:100%;padding:17px;background:var(--green);color:#fff;border:none;border-radius:14px;font-family:'DM Sans',sans-serif;font-size:1rem;font-weight:700;cursor:pointer;text-decoration:none;text-align:center;transition:all .15s;margin-top:8px}
+.cta:hover{background:#15803d}
+.cta-ghost{display:block;width:100%;padding:13px;background:transparent;color:var(--tx2);border:1px solid rgba(34,197,94,.2);border-radius:14px;font-family:'DM Sans',sans-serif;font-size:.9rem;font-weight:500;cursor:pointer;text-decoration:none;text-align:center;transition:all .15s}
+.cta-ghost:hover{border-color:rgba(34,197,94,.4);color:var(--tx)}
+.badge{background:rgba(245,200,66,.1);border:1px solid rgba(245,200,66,.25);border-radius:20px;padding:5px 14px;font-size:.72rem;font-weight:600;color:var(--gold);display:inline-block}
+.footer{font-size:.7rem;color:var(--tx3);margin-top:8px}
+</style>
+</head>
+<body>
+<div class="bg"></div>
+<div class="wrap">
+  <div class="badge">🇸🇳 Sénégal · Lancement 2025</div>
+  <div class="logo">Loyal<em>Card</em></div>
+  <div class="tagline">La carte de fidélité digitale pour les commerçants sénégalais. Gratuit pour commencer.</div>
+  <div class="divider"></div>
+  <div class="features">
+    <div class="feat">
+      <div class="feat-icon">📷</div>
+      <div class="feat-txt"><strong>Scanner QR en 2 secondes</strong>Crédite des points à chaque achat. Sans app pour le client.</div>
+    </div>
+    <div class="feat">
+      <div class="feat-icon">💬</div>
+      <div class="feat-txt"><strong>Notifications WhatsApp auto</strong>Ton client reçoit ses points directement sur WhatsApp.</div>
+    </div>
+    <div class="feat">
+      <div class="feat-icon">💚</div>
+      <div class="feat-txt"><strong>Paiement par Wave</strong>Abonnement à 2 500 FCFA/mois. Annulable à tout moment.</div>
+    </div>
+  </div>
+  <a href="/onboarding" class="cta">Créer mon espace gratuitement →</a>
+  <a href="/merchant" class="cta-ghost">J'ai déjà un compte</a>
+  <div class="footer">Gratuit 30 jours · Pas de carte bancaire requise</div>
+</div>
+</body>
+</html>
