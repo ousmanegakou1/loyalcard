@@ -255,7 +255,7 @@ function getCode(){
   // Cherche le code dans : /c/LC-XXXXXX ou ?code=LC-XXXXXX ou ?u=LC-XXXXXX
   const path   = window.location.pathname.split('/').filter(Boolean);
   const params = new URLSearchParams(window.location.search);
-  return path[path.length-1] || params.get('code') || params.get('u') || 'LC-A1B2C3';
+  if(params.get("code")) return params.get("code"); if(params.get("u")) return params.get("u"); const last=path[path.length-1]; if(last&&last!=="c"&&last.startsWith("LC-")) return last; return "LC-A1B2C3";
 }
 
 // QR SVG inline (rapide, pas de lib)
