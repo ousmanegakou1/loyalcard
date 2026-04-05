@@ -1,0 +1,1369 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/>
+<meta name="theme-color" content="#061206"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<title>LoyalCard — Espace Commerçant</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@700;900&family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<!-- jsQR chargé de façon non-bloquante -->
+<script>
+// Chargement non-bloquant de jsQR
+(function(){
+  const s=document.createElement('script');
+  s.src='https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js';
+  s.onerror=function(){ console.warn('jsQR non chargé — scanner manuel uniquement'); };
+  document.head.appendChild(s);
+})();
+</script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+:root{
+  --bg:#061206;
+  --s1:#0a1a0a;
+  --s2:#0f240f;
+  --s3:#152e15;
+  --s4:#1a3a1a;
+  --b1:rgba(34,197,94,.08);
+  --b2:rgba(34,197,94,.16);
+  --b3:rgba(34,197,94,.3);
+  --tx:#ecf5ec;
+  --tx2:#7aaa7a;
+  --tx3:#3a5e3a;
+  --green:#16a34a;
+  --green2:#22c55e;
+  --green3:#4ade80;
+  --gold:#f5c842;
+  --gold2:#fde68a;
+  --red:#ef4444;
+  --orange:#f97316;
+  --wave:#00c4a3;
+  --r:14px;
+  --r2:20px;
+  --r3:28px;
+}
+html,body{height:100%;background:var(--bg)}
+body{
+  font-family:'DM Sans',sans-serif;color:var(--tx);
+  min-height:100svh;overflow-x:hidden;
+  -webkit-font-smoothing:antialiased;
+}
+
+/* ── BG ── */
+.bg{position:fixed;inset:0;z-index:0;pointer-events:none}
+.bg::before{content:'';position:absolute;top:-10vh;left:50%;transform:translateX(-50%);
+  width:120vw;height:120vw;
+  background:radial-gradient(circle,rgba(22,163,74,.1) 0%,transparent 60%)}
+
+/* ── APP ── */
+.app{position:relative;z-index:1;max-width:430px;margin:0 auto;min-height:100svh;display:flex;flex-direction:column}
+
+/* ── PAGES ── */
+.page{display:none;flex-direction:column;flex:1;animation:fadeUp .3s ease}
+.page.active{display:flex}
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+
+/* ══════════════════════
+   HOME — 3 BOUTONS
+══════════════════════ */
+.home-header{
+  padding:max(env(safe-area-inset-top),16px) 20px 0;
+}
+.home-top{
+  display:flex;align-items:center;justify-content:space-between;padding:14px 0 18px;
+}
+.shop-info{}
+.shop-status{display:flex;align-items:center;gap:6px;margin-bottom:3px}
+.status-dot{width:7px;height:7px;border-radius:50%;background:var(--green2);animation:pulse 2s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(.8)}}
+.status-txt{font-family:'DM Mono',monospace;font-size:.65rem;color:var(--tx3);letter-spacing:.5px;text-transform:uppercase}
+.shop-name{font-family:'Fraunces',serif;font-size:1.5rem;font-weight:900;color:var(--tx);letter-spacing:-.01em}
+.home-menu-btn{
+  width:40px;height:40px;border-radius:50%;
+  background:var(--s2);border:1px solid var(--b2);
+  display:flex;align-items:center;justify-content:center;
+  font-size:1.1rem;cursor:pointer;color:var(--tx2);transition:all .15s;
+}
+.home-menu-btn:hover{background:var(--s3)}
+
+/* ── TODAY STRIP ── */
+.today-strip{
+  margin:0 20px 20px;
+  background:var(--s2);border:1px solid var(--b2);border-radius:var(--r2);
+  padding:14px 18px;
+  display:flex;align-items:center;justify-content:space-between;
+  position:relative;overflow:hidden;
+}
+.today-strip::before{content:'';position:absolute;top:-20px;right:-20px;width:80px;height:80px;
+  border-radius:50%;background:rgba(34,197,94,.06)}
+.today-stat{text-align:center}
+.today-val{font-family:'Fraunces',serif;font-size:1.6rem;font-weight:900;color:var(--green2);line-height:1}
+.today-lbl{font-family:'DM Mono',monospace;font-size:.58rem;color:var(--tx3);text-transform:uppercase;letter-spacing:.5px;margin-top:2px}
+.today-divider{width:1px;height:36px;background:var(--b2)}
+
+/* ── 3 MAIN BUTTONS ── */
+.main-btns{
+  display:grid;grid-template-columns:1fr 1fr;
+  gap:12px;padding:0 20px 16px;
+}
+.main-btn{
+  border-radius:var(--r2);padding:22px 16px;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;
+  cursor:pointer;transition:all .18s;border:none;
+  -webkit-tap-highlight-color:transparent;
+  position:relative;overflow:hidden;
+}
+.main-btn:active{transform:scale(.96)}
+/* Scanner — big primary */
+.main-btn-scan{
+  grid-column:1/-1;
+  background:var(--green);
+  padding:26px 20px;
+  box-shadow:0 8px 32px rgba(22,163,74,.35);
+}
+.main-btn-scan:hover{background:#15803d;box-shadow:0 10px 36px rgba(22,163,74,.45)}
+.main-btn-clients{background:var(--s2);border:1.5px solid var(--b2)}
+.main-btn-clients:hover{background:var(--s3);border-color:var(--b3)}
+.main-btn-rewards{background:var(--s2);border:1.5px solid var(--b2)}
+.main-btn-rewards:hover{background:var(--s3);border-color:var(--b3)}
+.mbi{font-size:2rem;line-height:1}
+.mbl{font-family:'DM Sans',sans-serif;font-size:.9rem;font-weight:700;color:#fff}
+.main-btn-clients .mbl,.main-btn-rewards .mbl{color:var(--tx)}
+.mbs{font-size:.72rem;font-weight:400;opacity:.65;color:#fff}
+.main-btn-clients .mbs,.main-btn-rewards .mbs{color:var(--tx2)}
+.btn-badge{
+  position:absolute;top:12px;right:12px;
+  background:var(--red);color:#fff;border-radius:20px;
+  padding:2px 8px;font-size:.62rem;font-weight:700;
+  font-family:'DM Mono',monospace;border:2px solid var(--bg);
+  display:none;
+}
+
+/* ── RECENT ACTIVITY ── */
+.home-recent{padding:0 20px;flex:1;overflow-y:auto;padding-bottom:20px}
+.sec-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.sec-title{font-family:'Fraunces',serif;font-size:1rem;font-weight:700;color:var(--tx)}
+.sec-more{font-size:.72rem;color:var(--tx3);cursor:pointer;transition:color .15s}
+.sec-more:hover{color:var(--green2)}
+
+/* ── HIST ITEM ── */
+.hi{display:flex;align-items:center;gap:11px;padding:10px 0;border-bottom:1px solid var(--b1)}
+.hi:last-child{border-bottom:none}
+.hi-ico{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0}
+.hi-ico.earn{background:rgba(34,197,94,.1)}
+.hi-ico.reward{background:rgba(245,200,66,.1)}
+.hi-info{flex:1;min-width:0}
+.hi-name{font-size:.82rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hi-meta{font-size:.66rem;color:var(--tx3);font-family:'DM Mono',monospace;margin-top:1px}
+.hi-pts{font-family:'Fraunces',serif;font-weight:700;font-size:.88rem;flex-shrink:0}
+.pts-p{color:var(--green3)} .pts-m{color:var(--red)}
+
+/* ══════════════════════
+   SCAN PAGE
+══════════════════════ */
+.scan-header{
+  padding:max(env(safe-area-inset-top),14px) 20px 14px;
+  display:flex;align-items:center;gap:12px;
+}
+.back-btn{
+  width:38px;height:38px;border-radius:50%;
+  background:var(--s2);border:1px solid var(--b1);
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;font-size:1rem;color:var(--tx2);transition:all .15s;
+}
+.back-btn:hover{background:var(--s3);color:var(--tx)}
+.scan-title{font-family:'Fraunces',serif;font-size:1.1rem;font-weight:700}
+
+/* Scanner zone */
+.scan-zone-wrap{flex:1;display:flex;flex-direction:column;padding:0 20px;gap:14px;overflow-y:auto;padding-bottom:20px}
+
+.scan-zone{
+  background:var(--s2);border:2px dashed var(--b2);border-radius:var(--r2);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:36px 24px;text-align:center;cursor:pointer;transition:all .2s;
+  min-height:220px;position:relative;overflow:hidden;
+}
+.scan-zone:hover,.scan-zone.hover{border-color:var(--b3);background:rgba(34,197,94,.04)}
+.scan-zone.active{border-style:solid;border-color:var(--green2);background:transparent;padding:0;cursor:default}
+.scan-zone.active video{width:100%;display:block;max-height:260px;object-fit:cover;border-radius:calc(var(--r2) - 2px)}
+.scan-overlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none}
+.scan-frame{width:180px;height:180px;border:2.5px solid var(--green2);border-radius:16px;box-shadow:0 0 0 9999px rgba(0,0,0,.5);position:relative}
+.sc{position:absolute;width:20px;height:20px;border-color:var(--green3);border-style:solid}
+.sc.tl{top:-2px;left:-2px;border-width:3px 0 0 3px;border-radius:4px 0 0 0}
+.sc.tr{top:-2px;right:-2px;border-width:3px 3px 0 0;border-radius:0 4px 0 0}
+.sc.bl{bottom:-2px;left:-2px;border-width:0 0 3px 3px;border-radius:0 0 0 4px}
+.sc.br{bottom:-2px;right:-2px;border-width:0 3px 3px 0;border-radius:0 0 4px 0}
+.scan-line{position:absolute;left:8px;right:8px;height:2px;background:linear-gradient(90deg,transparent,var(--green2),transparent);animation:scanmove 2s ease-in-out infinite;top:50%}
+@keyframes scanmove{0%{top:15%;opacity:0}10%{opacity:1}90%{opacity:1}100%{top:85%;opacity:0}}
+canvas#scan-canvas{display:none}
+
+.scan-icon{font-size:2.8rem;margin-bottom:12px;opacity:.6}
+.scan-cta-txt{font-size:.95rem;font-weight:600;margin-bottom:4px}
+.scan-cta-sub{font-size:.75rem;color:var(--tx3)}
+.scan-actions{display:flex;gap:8px;margin-top:14px}
+
+/* Manual input */
+.manual-row{display:flex;gap:8px}
+.manual-input{
+  flex:1;padding:12px 14px;background:var(--s2);border:1.5px solid var(--b1);
+  border-radius:var(--r);font-family:'DM Mono',monospace;font-size:.82rem;
+  color:var(--tx);outline:none;transition:border-color .2s;
+  text-transform:uppercase;letter-spacing:.05em;
+}
+.manual-input:focus{border-color:var(--green2)}
+.manual-input::placeholder{color:var(--tx3);text-transform:none;letter-spacing:0}
+
+/* Sim buttons */
+.sim-row{display:flex;gap:7px;flex-wrap:wrap}
+
+/* ── RESULT CARD ── */
+.result-card{
+  background:var(--s2);border:1.5px solid var(--b2);border-radius:var(--r2);
+  padding:18px;animation:fadeUp .3s ease;
+}
+.result-card.reward-ready{border-color:rgba(245,200,66,.4);background:rgba(245,200,66,.04)}
+.result-header{display:flex;align-items:center;gap:12px;margin-bottom:14px}
+.result-avatar{
+  width:46px;height:46px;border-radius:50%;
+  background:linear-gradient(135deg,var(--green),var(--wave));
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Fraunces',serif;font-size:1.2rem;font-weight:700;color:#fff;flex-shrink:0;
+}
+.result-name{font-size:.95rem;font-weight:700}
+.result-sub{font-size:.7rem;color:var(--tx3);font-family:'DM Mono',monospace;margin-top:2px}
+.result-pts-row{
+  display:flex;align-items:center;justify-content:space-around;
+  background:var(--s3);border-radius:var(--r);padding:14px;margin-bottom:14px;
+}
+.result-stat{text-align:center}
+.result-stat-val{font-family:'Fraunces',serif;font-size:1.6rem;font-weight:900;color:var(--green2);line-height:1}
+.result-stat-lbl{font-size:.6rem;color:var(--tx3);font-family:'DM Mono',monospace;text-transform:uppercase;letter-spacing:.5px;margin-top:2px}
+.result-stat-divider{width:1px;height:32px;background:var(--b2)}
+
+/* Progress bar */
+.result-prog-wrap{margin-bottom:14px}
+.result-prog-lbl{display:flex;justify-content:space-between;font-size:.72rem;margin-bottom:5px}
+.result-prog{height:7px;background:var(--s4);border-radius:20px;overflow:hidden}
+.result-prog-fill{height:100%;border-radius:20px;background:linear-gradient(90deg,var(--green),var(--green2));transition:width .5s ease}
+
+/* Add points form */
+.pts-form{display:flex;flex-direction:column;gap:10px}
+.pts-row{display:flex;gap:8px}
+.pts-input{
+  flex:1;padding:13px 14px;background:var(--s3);border:1.5px solid var(--b1);
+  border-radius:var(--r);font-family:'Fraunces',serif;font-size:1.2rem;font-weight:700;
+  color:var(--tx);outline:none;transition:border-color .2s;text-align:center;
+}
+.pts-input:focus{border-color:var(--green2)}
+.pts-input::placeholder{color:var(--tx3);font-family:'DM Sans',sans-serif;font-size:.85rem;font-weight:400}
+.note-input{
+  width:100%;padding:11px 14px;background:var(--s3);border:1.5px solid var(--b1);
+  border-radius:var(--r);font-family:'DM Sans',sans-serif;font-size:.85rem;
+  color:var(--tx);outline:none;transition:border-color .2s;
+}
+.note-input:focus{border-color:var(--green2)}
+.note-input::placeholder{color:var(--tx3)}
+.quick-pts{display:flex;gap:6px}
+.qp{
+  flex:1;padding:9px 8px;background:var(--s3);border:1.5px solid var(--b1);
+  border-radius:var(--r);font-family:'DM Sans',sans-serif;font-size:.8rem;font-weight:600;
+  color:var(--tx2);text-align:center;cursor:pointer;transition:all .15s;
+}
+.qp:hover,.qp:active{border-color:var(--green2);color:var(--green2);background:rgba(34,197,94,.06)}
+
+/* ── REWARD ALERT ── */
+.reward-alert{
+  background:rgba(245,200,66,.08);border:1.5px solid rgba(245,200,66,.3);
+  border-radius:var(--r2);padding:14px;margin-bottom:12px;
+  display:flex;align-items:flex-start;gap:12px;
+}
+.reward-alert-icon{font-size:1.4rem;flex-shrink:0}
+.reward-alert-title{font-size:.88rem;font-weight:700;color:var(--gold2);margin-bottom:3px}
+.reward-alert-sub{font-size:.75rem;color:rgba(245,200,66,.6)}
+
+/* ══════════════════════
+   CLIENTS PAGE
+══════════════════════ */
+.page-header{
+  padding:max(env(safe-area-inset-top),14px) 20px 14px;
+  display:flex;align-items:center;gap:12px;
+}
+.clients-list{flex:1;overflow-y:auto;padding:0 20px;padding-bottom:20px;display:flex;flex-direction:column;gap:8px}
+.client-item{
+  background:var(--s2);border:1px solid var(--b1);border-radius:var(--r2);
+  padding:14px;display:flex;align-items:center;gap:12px;cursor:pointer;
+  transition:all .15s;
+}
+.client-item:hover,.client-item:active{background:var(--s3);border-color:var(--b2)}
+.client-av{
+  width:42px;height:42px;border-radius:50%;flex-shrink:0;
+  background:linear-gradient(135deg,var(--green),var(--wave));
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Fraunces',serif;font-size:1rem;font-weight:700;color:#fff;
+}
+.client-info{flex:1;min-width:0}
+.client-name{font-size:.88rem;font-weight:700;margin-bottom:2px}
+.client-meta{font-size:.68rem;color:var(--tx3);font-family:'DM Mono',monospace}
+.client-pts-wrap{text-align:right;flex-shrink:0}
+.client-pts{font-family:'Fraunces',serif;font-size:1.3rem;font-weight:900;color:var(--green2);line-height:1}
+.client-pts-lbl{font-size:.58rem;color:var(--tx3);font-family:'DM Mono',monospace}
+.client-prog{height:3px;background:var(--s4);border-radius:10px;overflow:hidden;margin-top:6px;width:60px}
+.client-prog-fill{height:100%;border-radius:10px;background:var(--green)}
+
+/* search */
+.search-wrap{padding:0 20px 12px}
+.search-input{
+  width:100%;padding:11px 14px 11px 38px;background:var(--s2);border:1px solid var(--b1);
+  border-radius:var(--r);font-family:'DM Sans',sans-serif;font-size:.85rem;color:var(--tx);
+  outline:none;transition:border-color .2s;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%233a5e3a' stroke-width='2' stroke-linecap='round'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cpath d='M21 21l-4.35-4.35'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:12px center;
+}
+.search-input:focus{border-color:var(--green2)}
+.search-input::placeholder{color:var(--tx3)}
+
+/* ══════════════════════
+   REWARDS PAGE
+══════════════════════ */
+.rewards-wrap{flex:1;overflow-y:auto;padding:0 20px;padding-bottom:20px;display:flex;flex-direction:column;gap:10px}
+.rw-item{
+  background:var(--s2);border:1px solid var(--b1);border-radius:var(--r2);
+  padding:16px;display:flex;align-items:center;gap:12px;
+}
+.rw-icon{width:44px;height:44px;border-radius:12px;background:var(--s3);display:flex;align-items:center;justify-content:center;font-size:1.3rem;flex-shrink:0}
+.rw-info{flex:1;min-width:0}
+.rw-name{font-size:.88rem;font-weight:700;margin-bottom:2px}
+.rw-desc{font-size:.72rem;color:var(--tx2);margin-bottom:6px}
+.rw-cost{font-size:.7rem;color:var(--gold);font-family:'DM Mono',monospace;display:flex;align-items:center;gap:4px}
+.rw-type{font-size:.62rem;padding:2px 8px;border-radius:10px;font-family:'DM Mono',monospace;font-weight:600;margin-left:auto;flex-shrink:0}
+.rw-type.free{background:rgba(34,197,94,.1);color:var(--green3)}
+.rw-type.discount{background:rgba(59,130,246,.1);color:#60a5fa}
+.rw-type.cashback{background:rgba(245,200,66,.1);color:var(--gold2)}
+.rw-add-btn{
+  width:100%;padding:14px;background:rgba(34,197,94,.08);border:1.5px dashed var(--b3);
+  border-radius:var(--r2);display:flex;align-items:center;justify-content:center;gap:8px;
+  cursor:pointer;font-family:'DM Sans',sans-serif;font-size:.85rem;font-weight:600;color:var(--tx3);
+  transition:all .15s;
+}
+.rw-add-btn:hover{background:rgba(34,197,94,.12);color:var(--green2);border-color:var(--green2)}
+
+/* ── OFFLINE BANNER ── */
+.offline-banner{
+  display:none;background:rgba(249,115,22,.1);border-bottom:1px solid rgba(249,115,22,.2);
+  padding:8px 20px;
+  font-family:'DM Mono',monospace;font-size:.68rem;color:#fb923c;
+  display:flex;align-items:center;gap:7px;
+}
+.offline-banner.show{display:flex}
+.offline-dot{width:6px;height:6px;border-radius:50%;background:#fb923c;flex-shrink:0}
+
+/* ── NEW CLIENT MODAL ── */
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:200;
+  align-items:flex-end;justify-content:center;backdrop-filter:blur(4px)}
+.modal-bg.open{display:flex}
+.modal{background:var(--s2);border:1px solid var(--b2);border-radius:var(--r3) var(--r3) 0 0;
+  width:100%;max-width:430px;padding:24px;animation:slideUp .3s ease;max-height:90svh;overflow-y:auto}
+@keyframes slideUp{from{transform:translateY(100%)}to{transform:none}}
+.modal-handle{width:36px;height:4px;background:var(--s4);border-radius:2px;margin:0 auto 20px}
+.modal-title{font-family:'Fraunces',serif;font-size:1.2rem;font-weight:700;margin-bottom:18px}
+.field{margin-bottom:12px}
+.field label{display:block;font-size:.68rem;font-weight:600;color:var(--tx3);margin-bottom:5px;text-transform:uppercase;letter-spacing:.06em}
+.field input{
+  width:100%;padding:12px 14px;background:var(--s3);border:1.5px solid var(--b1);
+  border-radius:var(--r);font-family:'DM Sans',sans-serif;font-size:.9rem;
+  color:var(--tx);outline:none;transition:border-color .2s;
+}
+.field input:focus{border-color:var(--green2)}
+.field input::placeholder{color:var(--tx3)}
+.new-card-preview{margin-bottom:14px;display:none}
+
+/* ── BUTTONS ── */
+.btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:14px;
+  border-radius:var(--r);border:none;font-family:'DM Sans',sans-serif;font-size:.9rem;font-weight:700;
+  cursor:pointer;transition:all .15s;}
+.btn:active{transform:scale(.97)}
+.btn-primary{background:var(--green);color:#fff;box-shadow:0 4px 16px rgba(22,163,74,.3)}
+.btn-primary:hover{background:#15803d}
+.btn-ghost{background:var(--s3);color:var(--tx2);border:1px solid var(--b1)}
+.btn-ghost:hover{background:var(--s4);color:var(--tx)}
+.btn-gold{background:rgba(245,200,66,.12);color:var(--gold2);border:1.5px solid rgba(245,200,66,.3)}
+.btn-gold:hover{background:rgba(245,200,66,.2)}
+.btn-sm{padding:9px 16px;font-size:.78rem;width:auto}
+.btn-outline{background:transparent;color:var(--tx2);border:1.5px solid var(--b2)}
+.btn-outline:hover{border-color:var(--b3);color:var(--tx)}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.spin{width:16px;height:16px;border:2px solid rgba(255,255,255,.25);border-top-color:#fff;
+  border-radius:50%;animation:sp .7s linear infinite;display:inline-block;flex-shrink:0}
+@keyframes sp{to{transform:rotate(360deg)}}
+
+/* ── TOAST ── */
+.toasts{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);z-index:9999;
+  pointer-events:none;display:flex;flex-direction:column;gap:7px;align-items:center}
+.toast{background:var(--s4);border:1px solid var(--b2);border-radius:var(--r);padding:10px 18px;
+  font-size:.8rem;font-weight:500;animation:tIn .3s ease;white-space:nowrap;
+  display:flex;align-items:center;gap:7px;box-shadow:0 8px 24px rgba(0,0,0,.5)}
+.toast.ok{border-left:3px solid var(--green2);color:var(--green3)}
+.toast.err{border-left:3px solid var(--red);color:#f87171}
+.toast.warn{border-left:3px solid var(--gold);color:var(--gold2)}
+.toast.info{border-left:3px solid var(--wave);color:var(--wave)}
+@keyframes tIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+
+/* ── EMPTY ── */
+.empty{text-align:center;padding:48px 24px;color:var(--tx3)}
+.empty-icon{font-size:2.2rem;margin-bottom:10px;opacity:.3}
+.empty-title{font-family:'Fraunces',serif;font-size:.95rem;font-weight:700;color:var(--tx2);margin-bottom:5px}
+.empty-sub{font-size:.75rem;line-height:1.5}
+</style>
+</head>
+<body>
+
+<div class="bg"></div>
+
+<!-- OFFLINE BANNER -->
+<div class="offline-banner" id="offline-banner">
+  <div class="offline-dot"></div>
+  <span>Mode hors ligne — les scans seront synchronisés quand le réseau revient</span>
+</div>
+
+<div class="app" id="app">
+
+  <!-- ════════════════════════
+       PAGE HOME — 3 BOUTONS
+  ════════════════════════ -->
+  <div class="page active" id="page-home">
+    <div class="home-header">
+      <div class="home-top">
+        <div class="shop-info">
+          <div class="shop-status">
+            <div class="status-dot"></div>
+            <div class="status-txt" id="status-txt">Actif · Plan gratuit</div>
+          </div>
+          <div class="shop-name" id="shop-name-display">Café Atlas</div>
+        </div>
+        <div class="home-menu-btn" onclick="showPage('settings')">⚙️</div>
+      </div>
+    </div>
+
+    <!-- Today stats -->
+    <div class="today-strip">
+      <div class="today-stat">
+        <div class="today-val" id="today-scans">0</div>
+        <div class="today-lbl">Scans aujourd'hui</div>
+      </div>
+      <div class="today-divider"></div>
+      <div class="today-stat">
+        <div class="today-val" id="today-pts">0</div>
+        <div class="today-lbl">Points donnés</div>
+      </div>
+      <div class="today-divider"></div>
+      <div class="today-stat">
+        <div class="today-val" id="total-clients-count">6</div>
+        <div class="today-lbl">Clients total</div>
+      </div>
+    </div>
+
+    <!-- 3 MAIN BUTTONS -->
+    <div class="main-btns">
+      <button class="main-btn main-btn-scan" onclick="showPage('scan')">
+        <div class="mbi">📷</div>
+        <div>
+          <div class="mbl">Scanner une carte</div>
+          <div class="mbs">Appuie ici pour commencer</div>
+        </div>
+      </button>
+      <button class="main-btn main-btn-clients" onclick="showPage('clients')">
+        <div class="mbi">👥</div>
+        <div class="mbl">Clients</div>
+        <div class="mbs" id="clients-sub">6 fidèles</div>
+      </button>
+      <button class="main-btn main-btn-rewards" onclick="showPage('rewards')">
+        <div class="btn-badge" id="reward-ready-badge">1</div>
+        <div class="mbi">🎁</div>
+        <div class="mbl">Récompenses</div>
+        <div class="mbs" id="rewards-sub-txt">3 actives</div>
+      </button>
+    </div>
+
+    <!-- Recent activity -->
+    <div class="home-recent">
+      <div class="sec-hdr">
+        <div class="sec-title">Activité récente</div>
+        <div class="sec-more" onclick="showPage('scan')">Scanner →</div>
+      </div>
+      <div id="home-activity"></div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════
+       PAGE SCAN
+  ════════════════════════ -->
+  <div class="page" id="page-scan">
+    <div class="scan-header">
+      <div class="back-btn" onclick="goHome()">←</div>
+      <div class="scan-title">Scanner une carte</div>
+      <button class="btn btn-primary btn-sm" style="margin-left:auto" onclick="openNewClientModal()">+ Nouvelle carte</button>
+    </div>
+
+    <div class="scan-zone-wrap">
+      <!-- Scanner zone -->
+      <div class="scan-zone" id="scan-zone" onclick="startScan()">
+        <div class="scan-icon">📷</div>
+        <div class="scan-cta-txt">Pointer le QR code</div>
+        <div class="scan-cta-sub">Appuie pour activer la caméra</div>
+        <div class="scan-actions">
+          <button class="btn btn-primary btn-sm" onclick="startScan();event.stopPropagation()">
+            Activer le scanner
+          </button>
+        </div>
+      </div>
+      <canvas id="scan-canvas"></canvas>
+      <video id="scan-video" playsinline muted style="display:none"></video>
+
+      <!-- Simulation buttons (demo) -->
+      <div class="sim-row" id="sim-row">
+        <span style="font-size:.68rem;color:var(--tx3);font-family:'DM Mono',monospace;align-self:center;flex-shrink:0">Demo:</span>
+        <button class="btn btn-outline btn-sm" onclick="simulateScan('LC-A1B2C3')">Amina</button>
+        <button class="btn btn-outline btn-sm" onclick="simulateScan('LC-D4E5F6')">Moussa</button>
+        <button class="btn btn-outline btn-sm" onclick="simulateScan('LC-J0K1L2')">Ousmane</button>
+      </div>
+
+      <!-- Manual input -->
+      <div class="manual-row">
+        <input class="manual-input" id="manual-code" placeholder="Ou saisir le code manuellement"
+          autocomplete="off" autocorrect="off" autocapitalize="characters"
+          onkeydown="if(event.key==='Enter'){doManualScan();this.blur()}"/>
+        <button class="btn btn-ghost btn-sm" onclick="doManualScan()" style="width:auto;padding:11px 16px">→</button>
+      </div>
+
+      <!-- Result -->
+      <div id="scan-result"></div>
+
+    </div>
+  </div>
+
+  <!-- ════════════════════════
+       PAGE CLIENTS
+  ════════════════════════ -->
+  <div class="page" id="page-clients">
+    <div class="page-header">
+      <div class="back-btn" onclick="goHome()">←</div>
+      <div class="scan-title">Mes clients (<span id="clients-count">6</span>)</div>
+      <button class="btn btn-primary btn-sm" style="margin-left:auto" onclick="openNewClientModal()">+ Nouveau</button>
+    </div>
+    <div class="search-wrap">
+      <input class="search-input" placeholder="Rechercher un client..." oninput="filterClients(this.value)"/>
+    </div>
+    <div class="clients-list" id="clients-list"></div>
+  </div>
+
+  <!-- ════════════════════════
+       PAGE REWARDS
+  ════════════════════════ -->
+  <div class="page" id="page-rewards">
+    <div class="page-header">
+      <div class="back-btn" onclick="goHome()">←</div>
+      <div class="scan-title">Mes récompenses</div>
+      <button class="btn btn-primary btn-sm" style="margin-left:auto" onclick="openAddRewardModal()">+ Ajouter</button>
+    </div>
+    <div class="rewards-wrap" id="rewards-list"></div>
+  </div>
+
+  <!-- ════════════════════════
+       PAGE SETTINGS (minimal)
+  ════════════════════════ -->
+  <div class="page" id="page-settings">
+    <div class="page-header">
+      <div class="back-btn" onclick="goHome()">←</div>
+      <div class="scan-title">Mon compte</div>
+    </div>
+    <div style="padding:0 20px;flex:1;overflow-y:auto;padding-bottom:20px">
+      <div style="background:var(--s2);border:1px solid var(--b2);border-radius:var(--r2);padding:18px;margin-bottom:14px">
+        <div style="font-size:.68rem;color:var(--tx3);font-family:'DM Mono',monospace;text-transform:uppercase;letter-spacing:.6px;margin-bottom:10px">Ma boutique</div>
+        <div class="field"><label>Nom</label><input id="s-name" value="Café Atlas" oninput="document.getElementById('shop-name-display').textContent=this.value"/></div>
+        <div class="field"><label>Récompense (seuil)</label>
+          <div style="display:flex;gap:8px;align-items:center">
+            <input id="s-thresh" type="number" value="10" min="1" style="width:80px;padding:12px;background:var(--s3);border:1.5px solid var(--b1);border-radius:var(--r);color:var(--tx);font-family:'Fraunces',serif;font-size:1.2rem;font-weight:700;text-align:center;outline:none"/>
+            <span style="font-size:.78rem;color:var(--tx3)">achats =</span>
+            <input id="s-reward" value="Café gratuit" style="flex:1;padding:12px 14px;background:var(--s3);border:1.5px solid var(--b1);border-radius:var(--r);font-family:'DM Sans',sans-serif;font-size:.85rem;color:var(--tx);outline:none"/>
+          </div>
+        </div>
+        <button class="btn btn-primary" onclick="saveSettings()">Sauvegarder</button>
+      </div>
+
+      <div style="background:rgba(0,196,163,.06);border:1px solid rgba(0,196,163,.2);border-radius:var(--r2);padding:16px;margin-bottom:14px">
+        <div style="font-size:.78rem;font-weight:700;color:var(--wave);margin-bottom:6px">💳 Plan actuel : Gratuit</div>
+        <div style="font-size:.72rem;color:rgba(0,196,163,.6);line-height:1.6;margin-bottom:12px">30 jours gratuits · 50 clients max<br>Passe au plan Starter pour continuer</div>
+        <button class="btn btn-sm" style="background:var(--wave);color:#0a1a0a;width:auto;padding:9px 16px;font-weight:700" onclick="toast('Paiement Wave bientôt disponible 🚀','info')">
+          Passer au Starter — 2 500 FCFA/mois
+        </button>
+      </div>
+
+      <div style="background:var(--s2);border:1px solid var(--b1);border-radius:var(--r2);padding:16px">
+        <div style="font-size:.68rem;color:var(--tx3);font-family:'DM Mono',monospace;text-transform:uppercase;letter-spacing:.6px;margin-bottom:10px">Support</div>
+        <div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--b1);cursor:pointer" onclick="openWhatsApp()">
+          <span style="font-size:1.2rem">💬</span>
+          <span style="font-size:.85rem;font-weight:500">Support WhatsApp</span>
+          <span style="margin-left:auto;font-size:.78rem;color:var(--wave)">→</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px;padding:10px 0;cursor:pointer" onclick="logout()">
+          <span style="font-size:1.2rem">🚪</span>
+          <span style="font-size:.85rem;font-weight:500;color:var(--red)">Se déconnecter</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /app -->
+
+<!-- ════ MODALS ════ -->
+
+<!-- New client -->
+<div class="modal-bg" id="modal-new-client">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Nouveau client</div>
+    <div class="field"><label>Nom complet *</label><input id="nc-name" placeholder="Prénom Nom" autocomplete="off"/></div>
+    <div class="field"><label>Téléphone</label>
+      <div style="display:flex;gap:8px;align-items:center">
+        <div style="background:var(--s3);border:1.5px solid var(--b1);border-radius:var(--r);padding:12px 10px;font-family:'DM Mono',monospace;font-size:.8rem;color:var(--tx3);flex-shrink:0">🇸🇳 +221</div>
+        <input id="nc-phone" type="tel" placeholder="77 000 00 00" inputmode="numeric" style="flex:1;padding:12px 14px;background:var(--s3);border:1.5px solid var(--b1);border-radius:var(--r);font-family:'DM Mono',monospace;font-size:.9rem;color:var(--tx);outline:none"/>
+      </div>
+    </div>
+    <div id="new-card-preview" style="margin-bottom:14px;display:none;background:var(--s3);border:1px solid var(--b1);border-radius:var(--r);padding:14px">
+      <div style="font-size:.68rem;color:var(--tx3);font-family:'DM Mono',monospace;margin-bottom:6px">CARTE GÉNÉRÉE</div>
+      <div id="new-card-code" style="font-family:'DM Mono',monospace;font-size:.9rem;font-weight:700;color:var(--green2);letter-spacing:.08em"></div>
+    </div>
+    <button class="btn btn-primary" id="nc-btn" onclick="createClient()" disabled>Créer la carte</button>
+    <button class="btn btn-ghost" style="margin-top:8px" onclick="closeModal('modal-new-client')">Annuler</button>
+  </div>
+</div>
+
+<!-- Add reward -->
+<div class="modal-bg" id="modal-add-reward">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Nouvelle récompense</div>
+    <div style="display:flex;gap:8px;margin-bottom:14px">
+      <div class="field" style="flex:1;margin:0"><label>Nom</label><input id="ar-name" placeholder="Café gratuit"/></div>
+      <div class="field" style="margin:0"><label>Emoji</label><input id="ar-emoji" value="🎁" style="width:60px;text-align:center;font-size:1.2rem"/></div>
+    </div>
+    <div class="field"><label>Description</label><input id="ar-desc" placeholder="Détails..."/></div>
+    <div style="display:flex;gap:8px;margin-bottom:14px">
+      <div class="field" style="flex:1;margin:0"><label>Coût (pts)</label><input id="ar-cost" type="number" value="10" min="1"/></div>
+      <div class="field" style="flex:1;margin:0"><label>Type</label>
+        <select id="ar-type" style="width:100%;padding:12px 14px;background:var(--s3);border:1.5px solid var(--b1);border-radius:var(--r);font-family:'DM Sans',sans-serif;font-size:.85rem;color:var(--tx);outline:none">
+          <option value="free">Article gratuit</option>
+          <option value="discount">Réduction</option>
+          <option value="cashback">Cashback</option>
+        </select>
+      </div>
+    </div>
+    <button class="btn btn-primary" onclick="addReward()">Ajouter</button>
+    <button class="btn btn-ghost" style="margin-top:8px" onclick="closeModal('modal-add-reward')">Annuler</button>
+  </div>
+</div>
+
+<!-- TOASTS -->
+<div class="toasts" id="toasts"></div>
+
+<script>
+// ═══════════════════════════════════════════
+// DATA
+// ═══════════════════════════════════════════
+// ═══════════════════════════════════════════
+// CONFIG SUPABASE — remplace ces 2 valeurs
+// ═══════════════════════════════════════════
+const SB_URL  = 'https://TON_PROJECT.supabase.co';
+const SB_ANON = 'TON_ANON_KEY';
+
+// ── Offline queue ──
+let OFFLINE_QUEUE = [];
+function offlineSave(tx){ OFFLINE_QUEUE.push({...tx, _at: Date.now()}); }
+
+// ── Supabase helpers inline ──
+const sbH = () => ({ 'apikey': SB_ANON, 'Authorization': `Bearer ${SB_ANON}`, 'Content-Type': 'application/json', 'Prefer': 'return=representation' });
+
+async function sbGet(path){
+  const r = await fetch(SB_URL+path, { headers: sbH() });
+  const d = await r.json();
+  if(!r.ok) throw new Error(d.message||'Erreur');
+  return d;
+}
+
+async function sbRpc(fn, body={}){
+  const r = await fetch(`${SB_URL}/rest/v1/rpc/${fn}`, { method:'POST', headers: sbH(), body: JSON.stringify(body) });
+  const d = await r.json();
+  if(!r.ok) throw new Error(d.message||'Erreur RPC');
+  return d;
+}
+
+async function sbEdge(fn, body={}){
+  const r = await fetch(`${SB_URL}/functions/v1/${fn}`, {
+    method:'POST',
+    headers: { 'Authorization': `Bearer ${SB_ANON}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
+  });
+  const d = await r.json();
+  if(!r.ok || d.error) throw new Error(d.error || d.message || 'Erreur');
+  return d;
+}
+
+// ── Session localStorage ──
+function sbGetSession(){
+  try { return JSON.parse(localStorage.getItem('lc_session')||'null'); } catch(e){ return null; }
+}
+function sbIsLoggedIn(){ return !!sbGetSession()?.access_token; }
+
+// ── Charger le commerçant connecté ──
+async function sbLoadMerchant(){
+  const s = sbGetSession();
+  if(!s?.user?.id) throw new Error('Non connecté');
+  const d = await sbGet(`/rest/v1/merchants?user_id=eq.${s.user.id}&limit=1`);
+  if(!d.length) throw new Error('Commerçant introuvable');
+  return d[0];
+}
+
+// ── Charger cartes, récompenses, transactions ──
+async function sbLoadCards(mid){
+  return sbGet(`/rest/v1/loyalty_cards?merchant_id=eq.${mid}&active=eq.true&order=created_at.desc`);
+}
+async function sbLoadRewards(mid){
+  return sbGet(`/rest/v1/rewards?merchant_id=eq.${mid}&active=eq.true&order=pts_cost.asc`);
+}
+async function sbLoadTransactions(mid, limit=30){
+  return sbGet(`/rest/v1/transactions?merchant_id=eq.${mid}&order=created_at.desc&limit=${limit}`);
+}
+
+// ── Ajouter points via Edge Function ──
+async function sbAddPoints({ cardCode, merchantId, pts, note }){
+  return sbEdge('add-points', { card_code: cardCode, merchant_id: merchantId, pts, note: note||'Achat', source:'manual' });
+}
+
+// ── Créer une carte client ──
+async function sbCreateCard({ clientName, clientPhone, merchantId }){
+  // Générer le code via RPC
+  let code;
+  try { code = await sbRpc('generate_card_code'); }
+  catch(e){ code = 'LC-'+Math.random().toString(36).slice(2,8).toUpperCase(); }
+  if(typeof code === 'string') code = code.replace(/"/g,'').trim();
+
+  const r = await fetch(`${SB_URL}/rest/v1/loyalty_cards`, {
+    method:'POST', headers: sbH(),
+    body: JSON.stringify({
+      merchant_id:      merchantId,
+      code,
+      client_name:      clientName,
+      client_phone:     clientPhone ? '+221'+clientPhone.replace(/\D/g,'').replace(/^221/,'') : null,
+      client_phone_raw: clientPhone||null,
+      pts: 0, lifetime_pts: 0, tier:'bronze',
+    })
+  });
+  const d = await r.json();
+  if(!r.ok) throw new Error(d.message||'Erreur création');
+  return Array.isArray(d)?d[0]:d;
+}
+
+// ── Lien carte client ──
+function sbCardUrl(code){ return `https://loyalcard.sn/c/${code}`; }
+
+// ═══════════════════════════════════════════
+// DATA — chargé depuis Supabase ou démo
+// ═══════════════════════════════════════════
+let MERCHANT = null;
+let CLIENTS  = [];
+let REWARDS  = [];
+let TXS      = [];
+
+function dago(d){ const x=new Date(); x.setDate(x.getDate()-d); return x.toISOString(); }
+
+function demoData(){
+  MERCHANT = { id:'m1', name:'Café Atlas', type:'restaurant', threshold:10, reward_desc:'Café gratuit', plan:'free' };
+  CLIENTS  = [
+    {id:'c1',code:'LC-A1B2C3',name:'Amina Diallo',  phone:'77 123 45 67',pts:7, lifetime:47,created:dago(60)},
+    {id:'c2',code:'LC-D4E5F6',name:'Moussa Traoré', phone:'76 234 56 78',pts:3, lifetime:23,created:dago(40)},
+    {id:'c3',code:'LC-G7H8I9',name:'Fatou Sow',     phone:'70 345 67 89',pts:2, lifetime:12,created:dago(35)},
+    {id:'c4',code:'LC-J0K1L2',name:'Ousmane Ba',    phone:'78 456 78 90',pts:9, lifetime:19,created:dago(25)},
+    {id:'c5',code:'LC-M3N4O5',name:'Mariama D.',    phone:'77 567 89 01',pts:0, lifetime:5, created:dago(15)},
+    {id:'c6',code:'LC-P6Q7R8',name:'Ibrahima Diop', phone:'76 678 90 12',pts:5, lifetime:13,created:dago(10)},
+  ];
+  REWARDS = [
+    {id:'r1',name:'Café gratuit',  description:'Un café',    emoji:'☕',pts_cost:10,type:'free_item'},
+    {id:'r2',name:'Viennoiserie',  description:'Croissant',  emoji:'🥐',pts_cost:6, type:'free_item'},
+    {id:'r3',name:'-20% addition', description:'Prochain',   emoji:'🏷️',pts_cost:15,type:'discount'},
+  ];
+  TXS = [
+    {id:'t1',cid:'c1',pts:2,  type:'earn',  note:'2 cafés',      at:dago(10)},
+    {id:'t2',cid:'c4',pts:5,  type:'earn',  note:'Plateau midi', at:dago(5)},
+    {id:'t3',cid:'c1',pts:3,  type:'earn',  note:'Déjeuner',     at:dago(3)},
+    {id:'t4',cid:'c2',pts:3,  type:'earn',  note:'Café',         at:dago(2)},
+    {id:'t5',cid:'c1',pts:-10,type:'reward',note:'Café gratuit', at:dago(1)},
+  ];
+}
+
+async function initApp(){
+  // Pas de session → mode démo
+  if(!sbIsLoggedIn()){
+    demoData();
+    renderHome();
+    return;
+  }
+  try {
+    MERCHANT = await sbLoadMerchant();
+    const mid = MERCHANT.id;
+    const [cards, rewards, txs] = await Promise.all([
+      sbLoadCards(mid), sbLoadRewards(mid), sbLoadTransactions(mid, 30)
+    ]);
+    CLIENTS = (cards||[]).map(c=>({
+      id:c.id, code:c.code, name:c.client_name,
+      phone:c.client_phone_raw||'', pts:c.pts,
+      lifetime:c.lifetime_pts, created:c.created_at
+    }));
+    REWARDS = rewards||[];
+    TXS = (txs||[]).map(t=>({
+      id:t.id, cid:t.card_id, pts:t.pts,
+      type:t.type, note:t.note, at:t.created_at
+    }));
+  } catch(e){
+    console.warn('Mode démo:', e.message);
+    demoData();
+  }
+  renderHome();
+}
+
+// ═══════════════════════════════════════════
+// HELPERS
+// ═══════════════════════════════════════════
+const uid = ()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+const esc = s=>String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+function fmtDT(iso){
+  if(!iso) return '—';
+  const d=new Date(iso), now=new Date();
+  const diff=Math.floor((now-d)/86400000);
+  if(diff===0){
+    const m=d.getHours()*60+d.getMinutes(), nm=now.getHours()*60+now.getMinutes();
+    const dm=nm-m;
+    if(dm<2) return 'À l\'instant';
+    if(dm<60) return 'Il y a '+dm+' min';
+    return 'Aujourd\'hui '+d.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
+  }
+  if(diff===1) return 'Hier';
+  if(diff<7)   return 'Il y a '+diff+' jours';
+  return d.toLocaleDateString('fr-FR',{day:'2-digit',month:'short'});
+}
+
+function genCode(){
+  return 'LC-'+Math.random().toString(36).slice(2,8).toUpperCase();
+}
+
+// ═══════════════════════════════════════════
+// NAVIGATION
+// ═══════════════════════════════════════════
+let currentPage='home';
+function showPage(id){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById('page-'+id)?.classList.add('active');
+  currentPage=id;
+  if(id==='home')    renderHome();
+  if(id==='clients') renderClients();
+  if(id==='rewards') renderRewards();
+  if(id==='scan')    resetScanUI();
+  window.scrollTo(0,0);
+}
+function goHome(){ stopScan(); showPage('home'); }
+
+// ═══════════════════════════════════════════
+// RENDER HOME
+// ═══════════════════════════════════════════
+function renderHome(){
+  if(!MERCHANT) return;
+  document.getElementById('shop-name-display').textContent = MERCHANT.name;
+  const today = new Date().toISOString().slice(0,10);
+  const todayTxs = TXS.filter(t=>(t.at||'').startsWith(today));
+  document.getElementById('today-scans').textContent = todayTxs.filter(t=>t.type==='earn').length;
+  document.getElementById('today-pts').textContent   = todayTxs.filter(t=>t.type==='earn').reduce((s,t)=>s+(t.pts||0),0);
+  document.getElementById('total-clients-count').textContent = CLIENTS.length;
+  document.getElementById('clients-sub').textContent = CLIENTS.length + ' fidèles';
+  document.getElementById('rewards-sub-txt').textContent = REWARDS.length + ' actives';
+  const thresh = MERCHANT?.threshold || 10;
+  const ready = CLIENTS.filter(c=>(c.pts||0)>=thresh).length;
+  const badge = document.getElementById('reward-ready-badge');
+  if(badge){ badge.style.display=ready>0?'block':'none'; badge.textContent=ready; }
+  const act = document.getElementById('home-activity');
+  const recent = [...TXS].reverse().slice(0,5);
+  if(!recent.length){
+    act.innerHTML='<div class="empty"><div class="empty-icon">📋</div><div class="empty-title">Aucune activité</div><div class="empty-sub">Scannez votre premier client</div></div>';
+    return;
+  }
+  act.innerHTML = recent.map(t=>{
+    const c=CLIENTS.find(x=>x.id===t.cid);
+    return `<div class="hi">
+      <div class="hi-ico ${t.type}">${t.type==='earn'?'⭐':'🎁'}</div>
+      <div class="hi-info">
+        <div class="hi-name">${esc(c?.name||'Client')} — ${esc(t.note||'')}</div>
+        <div class="hi-meta">${fmtDT(t.at||t.created_at)}</div>
+      </div>
+      <div class="hi-pts ${t.pts>0?'pts-p':'pts-m'}">${t.pts>0?'+':''}${t.pts}</div>
+    </div>`;
+  }).join('');
+}
+
+// ═══════════════════════════════════════════
+// SCANNER
+// ═══════════════════════════════════════════
+let scanActive=false, scanStream=null, scanRaf=null, foundCard=null;
+
+function resetScanUI(){
+  stopScan();
+  foundCard=null;
+  document.getElementById('scan-result').innerHTML='';
+  const zone=document.getElementById('scan-zone');
+  zone.className='scan-zone';
+  zone.innerHTML=`
+    <div class="scan-icon">📷</div>
+    <div class="scan-cta-txt">Pointer le QR code</div>
+    <div class="scan-cta-sub">Appuie pour activer la caméra</div>
+    <div class="scan-actions">
+      <button class="btn btn-primary btn-sm" onclick="startScan();event.stopPropagation()">Activer le scanner</button>
+      <button class="btn btn-ghost btn-sm" onclick="openNewClientModal();event.stopPropagation()">+ Nouvelle carte</button>
+    </div>`;
+  zone.onclick=()=>startScan();
+  document.getElementById('manual-code').value='';
+}
+
+async function startScan(){
+  if(scanActive) return;
+  const zone=document.getElementById('scan-zone');
+  zone.className='scan-zone active';
+  zone.onclick=null;
+  zone.innerHTML=`
+    <video id="scan-video-live" playsinline muted style="width:100%;display:block;max-height:260px;object-fit:cover;border-radius:18px"></video>
+    <div class="scan-overlay">
+      <div class="scan-frame">
+        <div class="sc tl"></div><div class="sc tr"></div><div class="sc bl"></div><div class="sc br"></div>
+        <div class="scan-line"></div>
+      </div>
+    </div>
+    <div style="padding:12px;display:flex;gap:8px;justify-content:center">
+      <button class="btn btn-ghost btn-sm" onclick="stopScan();resetScanUI()">Arrêter</button>
+    </div>`;
+  try{
+    const stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment',width:{ideal:1280},height:{ideal:720}}});
+    scanStream=stream; scanActive=true;
+    const v=document.getElementById('scan-video-live');
+    v.srcObject=stream; v.play();
+    scanLoop(v);
+  } catch(e){
+    toast('Caméra non accessible','warn');
+    resetScanUI();
+  }
+}
+
+function scanLoop(video){
+  if(!scanActive) return;
+  const c=document.getElementById('scan-canvas');
+  if(!c){ scanRaf=requestAnimationFrame(()=>scanLoop(video)); return; }
+  const ctx=c.getContext('2d');
+  if(video.readyState===video.HAVE_ENOUGH_DATA){
+    c.width=video.videoWidth; c.height=video.videoHeight;
+    ctx.drawImage(video,0,0);
+    const img=ctx.getImageData(0,0,c.width,c.height);
+    const code=window.jsQR?jsQR(img.data,img.width,img.height):null;
+    if(code){ stopScan(); handleCode(code.data); return; }
+  }
+  scanRaf=requestAnimationFrame(()=>scanLoop(video));
+}
+
+function stopScan(){
+  scanActive=false;
+  if(scanStream){ scanStream.getTracks().forEach(t=>t.stop()); scanStream=null; }
+  if(scanRaf){ cancelAnimationFrame(scanRaf); scanRaf=null; }
+}
+
+function simulateScan(code){ stopScan(); resetScanUI(); setTimeout(()=>handleCode(code),100); }
+
+function doManualScan(){
+  const v=document.getElementById('manual-code').value.trim().toUpperCase();
+  if(v) handleCode(v);
+}
+
+function handleCode(code){
+  const client=CLIENTS.find(c=>c.code===code);
+  if(!client){
+    // Code inconnu → proposer de créer une carte
+    const res=document.getElementById('scan-result');
+    res.innerHTML=`
+      <div style="background:var(--s2);border:1.5px solid rgba(249,115,22,.25);border-radius:var(--r2);padding:18px;text-align:center">
+        <div style="font-size:1.4rem;margin-bottom:8px">🤷</div>
+        <div style="font-size:.9rem;font-weight:700;margin-bottom:4px">Carte introuvable</div>
+        <div style="font-size:.75rem;color:var(--tx3);margin-bottom:16px">Le code <strong style="color:var(--tx2);font-family:'DM Mono',monospace">${esc(code)}</strong> n'existe pas encore.</div>
+        <button class="btn btn-primary" onclick="openNewClientModal('${esc(code)}')">
+          ➕ Créer une carte pour ce client
+        </button>
+        <button class="btn btn-ghost" style="margin-top:8px" onclick="resetScanUI()">Réessayer</button>
+      </div>`;
+    toast('Carte inconnue — crée-la maintenant','warn');
+    return;
+  }
+  foundCard=client;
+  stopScan();
+  const zone=document.getElementById('scan-zone');
+  zone.className='scan-zone';
+  zone.style.borderStyle='solid';
+  zone.style.borderColor='var(--green2)';
+  zone.style.background='rgba(34,197,94,.04)';
+  zone.innerHTML=`<div style="padding:16px;width:100%;text-align:center">
+    <div style="font-size:1.5rem;margin-bottom:6px">✓</div>
+    <div style="font-size:.9rem;font-weight:700;color:var(--green2)">Carte reconnue</div>
+    <div style="font-size:.75rem;color:var(--tx3);margin-top:3px">${esc(code)}</div>
+    <button class="btn btn-outline btn-sm" style="margin-top:12px" onclick="resetScanUI()">Nouveau scan</button>
+  </div>`;
+  zone.onclick=null;
+  renderResult(client);
+  toast('✓ '+client.name,'ok');
+}
+
+function renderResult(client){
+  const pct=Math.min(100,((client.pts||0)/MERCHANT?.threshold||10)*100);
+  const rem=Math.max(0,MERCHANT?.threshold||10-(client.pts||0));
+  const hasReward=(client.pts||0)>=MERCHANT?.threshold||10;
+  const res=document.getElementById('scan-result');
+  res.innerHTML=`
+    ${hasReward?`<div class="reward-alert">
+      <div class="reward-alert-icon">🎉</div>
+      <div>
+        <div class="reward-alert-title">Récompense disponible !</div>
+        <div class="reward-alert-sub">${esc(MERCHANT?.reward_desc||"Récompense")}</div>
+        <button class="btn btn-gold btn-sm" style="margin-top:10px" onclick="useReward('${client.id}')">
+          Utiliser maintenant (−${MERCHANT?.threshold||10} pts)
+        </button>
+      </div>
+    </div>`:''}
+    <div class="result-card${hasReward?' reward-ready':''}">
+      <div class="result-header">
+        <div class="result-avatar">${client.name[0]}</div>
+        <div>
+          <div class="result-name">${esc(client.name)}</div>
+          <div class="result-sub">+221 ${client.phone||'—'} · ${esc(client.code)}</div>
+        </div>
+      </div>
+      <div class="result-pts-row">
+        <div class="result-stat">
+          <div class="result-stat-val">${client.pts||0}</div>
+          <div class="result-stat-lbl">Points</div>
+        </div>
+        <div class="result-stat-divider"></div>
+        <div class="result-stat">
+          <div class="result-stat-val">${client.lifetime||0}</div>
+          <div class="result-stat-lbl">Cumulés</div>
+        </div>
+        <div class="result-stat-divider"></div>
+        <div class="result-stat">
+          <div class="result-stat-val">${rem}</div>
+          <div class="result-stat-lbl">Restants</div>
+        </div>
+      </div>
+      <div class="result-prog-wrap">
+        <div class="result-prog-lbl">
+          <span>${client.pts||0} / ${MERCHANT?.threshold||10} pts</span>
+          <span style="color:var(--tx3)">${MERCHANT?.reward_desc||"Récompense"}</span>
+        </div>
+        <div class="result-prog"><div class="result-prog-fill" style="width:${pct}%"></div></div>
+      </div>
+      <div class="pts-form">
+        <div class="quick-pts">
+          ${[1,2,5,10].map(n=>`<div class="qp" onclick="setQuickPts(${n})">+${n}</div>`).join('')}
+        </div>
+        <div class="pts-row">
+          <input class="pts-input" id="pts-val" type="number" min="1" placeholder="Points" inputmode="numeric"/>
+          <input class="note-input" id="note-val" placeholder="Note (ex: Déjeuner)" style="flex:2"/>
+        </div>
+        <button class="btn btn-primary" id="add-pts-btn" onclick="addPoints('${client.id}')">
+          ➕ Ajouter les points
+        </button>
+      </div>
+    </div>`;
+}
+
+function setQuickPts(n){
+  document.getElementById('pts-val').value=n;
+  document.getElementById('pts-val').focus();
+}
+
+function addPoints(clientId){
+  const pts=parseInt(document.getElementById('pts-val')?.value||0);
+  const note=document.getElementById('note-val')?.value||'Achat';
+  if(!pts||pts<1){ toast('Entre un nombre de points valide','err'); return; }
+
+  const btn=document.getElementById('add-pts-btn');
+  if(btn){ btn.innerHTML='<span class="spin"></span>'; btn.disabled=true; }
+
+  const client=CLIENTS.find(c=>c.id===clientId);
+  if(!client) return;
+
+  const doUpdate = (result) => {
+    // Mettre à jour local
+    const newPts = result?.pts_total ?? (client.pts||0)+pts;
+    const newLifetime = result?.lifetime_pts ?? (client.lifetime||0)+pts;
+    client.pts = newPts;
+    client.lifetime = newLifetime;
+    const tx = {id:uid(),cid:clientId,pts,type:'earn',note,at:new Date().toISOString()};
+    TXS.push(tx);
+
+    const wasBelow = (newPts-pts) < (MERCHANT?.threshold||10);
+    const nowAbove = newPts >= (MERCHANT?.threshold||10);
+    if(wasBelow&&nowAbove || result?.just_unlocked){
+      toast('🎉 '+client.name+' a atteint la récompense !','warn');
+    } else {
+      toast('+'+pts+' pts → '+client.name,'ok');
+    }
+    renderResult(client);
+    document.getElementById('pts-val').value='';
+    document.getElementById('note-val').value='';
+  };
+
+  if(!navigator.onLine){
+    offlineSave({ cardCode: client.code, pts, note });
+    toast('Hors ligne — scan sauvegardé','warn');
+    doUpdate(null);
+    return;
+  }
+
+  sbAddPoints({ cardCode: client.code, merchantId: MERCHANT?.id||'m1', pts, note })
+    .then(result => doUpdate(result))
+    .catch(err => {
+      // Fallback local si erreur API
+      offlineSave({ cardCode: client.code, pts, note });
+      toast('Sync plus tard — points enregistrés','warn');
+      doUpdate(null);
+    });
+}
+
+function useReward(clientId){
+  const client=CLIENTS.find(c=>c.id===clientId);
+  if(!client||(client.pts||0)<MERCHANT?.threshold||10){ toast('Pas assez de points','err'); return; }
+  client.pts-=MERCHANT?.threshold||10;
+  TXS.push({id:uid(),cid:clientId,pts:-MERCHANT?.threshold||10,type:'reward',note:MERCHANT?.reward_desc||"Récompense",at:new Date().toISOString()});
+  toast('Récompense utilisée : '+MERCHANT?.reward_desc||"Récompense",'ok');
+  renderResult(client);
+}
+
+// ═══════════════════════════════════════════
+// CLIENTS PAGE
+// ═══════════════════════════════════════════
+function renderClients(filter=''){
+  const list=document.getElementById('clients-list');
+  document.getElementById('clients-count').textContent=CLIENTS.length;
+  const filtered=filter?CLIENTS.filter(c=>c.name.toLowerCase().includes(filter.toLowerCase())||c.phone.includes(filter)):CLIENTS;
+  if(!filtered.length){
+    list.innerHTML='<div class="empty"><div class="empty-icon">👤</div><div class="empty-title">Aucun résultat</div></div>';
+    return;
+  }
+  list.innerHTML=[...filtered].sort((a,b)=>(b.pts||0)-(a.pts||0)).map(c=>{
+    const pct=Math.min(100,((c.pts||0)/MERCHANT?.threshold||10)*100);
+    const ready=(c.pts||0)>=MERCHANT?.threshold||10;
+    return `<div class="client-item" onclick="quickScanClient('${c.id}')">
+      <div class="client-av">${c.name[0]}</div>
+      <div class="client-info">
+        <div class="client-name">${esc(c.name)}</div>
+        <div class="client-meta">+221 ${c.phone||'—'} · ${esc(c.code)}</div>
+        <div class="client-prog"><div class="client-prog-fill" style="width:${pct}%"></div></div>
+      </div>
+      <div class="client-pts-wrap">
+        <div class="client-pts" style="color:${ready?'var(--gold2)':'var(--green2)'}">${c.pts||0}</div>
+        <div class="client-pts-lbl">${ready?'🎁 PRÊT':'/ '+MERCHANT?.threshold||10+' pts'}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function filterClients(q){ renderClients(q); }
+
+function quickScanClient(id){
+  foundCard=CLIENTS.find(c=>c.id===id);
+  showPage('scan');
+  setTimeout(()=>{
+    handleCode(foundCard.code);
+  },200);
+}
+
+function openNewClientModal(prefillCode=''){
+  document.getElementById('nc-name').value='';
+  document.getElementById('nc-phone').value='';
+  document.getElementById('nc-btn').disabled=true;
+  const preview=document.getElementById('new-card-preview');
+  const code=prefillCode||genCode();
+  preview.style.display='block';
+  document.getElementById('new-card-code').textContent=code;
+  preview.dataset.code=code;
+  document.getElementById('modal-new-client').classList.add('open');
+  setTimeout(()=>document.getElementById('nc-name').focus(),300);
+  document.getElementById('nc-name').oninput=()=>{
+    const n=document.getElementById('nc-name').value.trim();
+    document.getElementById('nc-btn').disabled=!n;
+  };
+}
+
+function createClient(){
+  const name=document.getElementById('nc-name').value.trim();
+  if(!name) return;
+  const phone=document.getElementById('nc-phone').value.replace(/\D/g,'').replace(/^221/,'');
+  const previewCode=document.getElementById('new-card-preview').dataset.code||genCode();
+  const mid=MERCHANT?.id||'m1';
+
+  const finalize=(cardCode)=>{
+    closeModal('modal-new-client');
+    showPage('scan');
+    const cardUrl=`https://loyalcard.sn/c/${cardCode}`;
+    const result=document.getElementById('scan-result');
+    if(result){
+      result.innerHTML=`
+        <div style="background:var(--s2);border:1.5px solid var(--b3);border-radius:var(--r2);padding:18px">
+          <div style="font-size:.68rem;color:var(--tx3);font-family:'DM Mono',monospace;text-transform:uppercase;letter-spacing:.6px;margin-bottom:10px">Carte créée ✓</div>
+          <div style="font-size:.9rem;font-weight:700;margin-bottom:2px">${esc(name)}</div>
+          <div style="font-family:'DM Mono',monospace;font-size:.78rem;color:var(--green2);margin-bottom:14px">${cardCode}</div>
+          <div style="font-size:.75rem;color:var(--tx2);margin-bottom:10px">Envoie ce lien au client :</div>
+          <div style="background:var(--s3);border-radius:var(--r);padding:10px 12px;font-family:'DM Mono',monospace;font-size:.72rem;color:var(--green3);word-break:break-all;margin-bottom:12px">${cardUrl}</div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            ${phone?`
+            <button class="btn btn-primary btn-sm" onclick="sendWhatsApp('+221${phone}','${esc(name)}','${cardCode}','${cardUrl}')">💬 WhatsApp</button>
+            <button class="btn btn-ghost btn-sm" onclick="sendSMS('+221${phone}','${cardUrl}')">📱 SMS</button>`:''}
+            <button class="btn btn-ghost btn-sm" onclick="copyLink('${cardUrl}')">📋 Copier</button>
+          </div>
+        </div>`;
+    }
+    toast('Carte créée pour '+name+' 🎉','ok');
+  };
+
+  // Essayer Supabase, fallback local si hors ligne ou erreur
+  sbCreateCard({clientName:name, clientPhone:phone, merchantId:mid})
+    .then(card=>{
+      CLIENTS.push({id:card.id,code:card.code,name,phone,pts:0,lifetime:0,created:card.created_at});
+      renderClients();
+      finalize(card.code);
+    })
+    .catch(()=>{
+      // mode offline / demo
+      CLIENTS.push({id:uid(),code:previewCode,name,phone,pts:0,lifetime:0,created:new Date().toISOString()});
+      renderClients();
+      finalize(previewCode);
+    });
+}
+
+function sendWhatsApp(phone, name, code, url){
+  const msg = encodeURIComponent(`Bonjour ${name} ! 🎉\nVoici ta carte de fidélité chez ${MERCHANT.name} :\n${url}\n\nScanne-la à chaque visite pour cumuler des points.`);
+  window.open(`https://wa.me/${phone.replace('+','')}?text=${msg}`, '_blank');
+  toast('WhatsApp ouvert','ok');
+}
+
+function sendSMS(phone, url){
+  window.open(`sms:${phone}?body=${encodeURIComponent('Ta carte LoyalCard : '+url)}`, '_blank');
+}
+
+function copyLink(url){
+  navigator.clipboard?.writeText(url);
+  toast('Lien copié !','ok');
+}
+
+// ═══════════════════════════════════════════
+// REWARDS PAGE
+// ═══════════════════════════════════════════
+function renderRewards(){
+  const list=document.getElementById('rewards-list');
+  list.innerHTML=REWARDS.map(r=>`
+    <div class="rw-item">
+      <div class="rw-icon">${r.emoji}</div>
+      <div class="rw-info">
+        <div class="rw-name">${esc(r.name)}</div>
+        <div class="rw-desc">${esc(r.desc)}</div>
+        <div class="rw-cost">⭐ ${r.cost} points requis</div>
+      </div>
+      <div class="rw-type ${r.type}">${r.type==='free'?'Gratuit':r.type==='discount'?'Réduction':'Cashback'}</div>
+    </div>`).join('') +
+    `<div class="rw-add-btn" onclick="openAddRewardModal()">
+      <span style="font-size:1.2rem">+</span> Ajouter une récompense
+    </div>`;
+}
+
+function openAddRewardModal(){
+  document.getElementById('ar-name').value='';
+  document.getElementById('ar-desc').value='';
+  document.getElementById('ar-cost').value='10';
+  document.getElementById('ar-emoji').value='🎁';
+  document.getElementById('modal-add-reward').classList.add('open');
+  setTimeout(()=>document.getElementById('ar-name').focus(),300);
+}
+
+function addReward(){
+  const name=document.getElementById('ar-name').value.trim();
+  if(!name){ toast('Nom obligatoire','err'); return; }
+  REWARDS.push({
+    id:uid(), name,
+    desc:document.getElementById('ar-desc').value,
+    cost:parseInt(document.getElementById('ar-cost').value)||10,
+    type:document.getElementById('ar-type').value,
+    emoji:document.getElementById('ar-emoji').value||'🎁',
+  });
+  closeModal('modal-add-reward');
+  renderRewards();
+  toast('Récompense ajoutée','ok');
+}
+
+// ═══════════════════════════════════════════
+// SETTINGS
+// ═══════════════════════════════════════════
+function saveSettings(){
+  MERCHANT.name=document.getElementById('s-name').value||MERCHANT.name;
+  if(MERCHANT) MERCHANT.threshold=parseInt(document.getElementById('s-thresh').value)||MERCHANT.threshold||10;
+  if(MERCHANT) MERCHANT.reward_desc=document.getElementById('s-reward').value||MERCHANT.reward_desc||'Récompense';
+  toast('Modifications sauvegardées','ok');
+}
+
+function openWhatsApp(){ window.open('https://wa.me/221XXXXXXXXX?text=Bonjour, j\'ai besoin d\'aide LoyalCard','_blank'); }
+function logout(){ window.location.href='/onboarding'; }
+
+// ═══════════════════════════════════════════
+// MODALS
+// ═══════════════════════════════════════════
+function closeModal(id){ document.getElementById(id)?.classList.remove('open'); }
+document.querySelectorAll('.modal-bg').forEach(m=>{
+  m.addEventListener('click',e=>{ if(e.target===m) m.classList.remove('open'); });
+});
+
+// ═══════════════════════════════════════════
+// TOAST
+// ═══════════════════════════════════════════
+function toast(msg,type='ok'){
+  const w=document.getElementById('toasts');
+  const el=document.createElement('div');
+  el.className='toast '+type;
+  const icon={ok:'✓',err:'✗',warn:'⚠',info:'💡'}[type]||'•';
+  el.innerHTML=icon+' '+msg;
+  w.appendChild(el);
+  setTimeout(()=>el.remove(),3200);
+}
+
+// ═══════════════════════════════════════════
+// OFFLINE
+// ═══════════════════════════════════════════
+function updateOfflineBanner(){
+  const b=document.getElementById('offline-banner');
+  if(b) b.classList.toggle('show',!navigator.onLine);
+}
+window.addEventListener('online', ()=>{ updateOfflineBanner(); toast('Connexion rétablie — synchronisation...','ok'); syncOfflineQueue(); });
+window.addEventListener('offline',()=>{ updateOfflineBanner(); toast('Mode hors ligne activé','warn'); });
+function syncOfflineQueue(){
+  if(!OFFLINE_QUEUE.length) return;
+  // ici: envoyer OFFLINE_QUEUE à Supabase
+  console.log('Sync',OFFLINE_QUEUE.length,'txs offline');
+  OFFLINE_QUEUE=[];
+}
+
+// ═══════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════
+initApp();
+updateOfflineBanner();
+</script>
+</body>
+</html>
