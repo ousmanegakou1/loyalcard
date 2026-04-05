@@ -1,5 +1,3 @@
-/onboarding     /onboarding.html    200
-/merchant       /merchant.html      200
-/merchant/*     /merchant.html      200
-/c/:code        /client.html        200
-/c/*            /client.html        200
+/merchant   /merchant/index.html   200
+/onboarding /onboarding/index.html 200
+/c/*        /c/index.html          200
